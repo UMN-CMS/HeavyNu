@@ -27,7 +27,7 @@ void ZShapeEvent::clear() {
   elec(0).clear();
   elec(1).clear();
   n_elec=0;
-
+  n_gsf20=0;
 
   if(eTL1_==0) eTL1_=allocateTreeLevelElectron();
   if(eTL2_==0) eTL2_=allocateTreeLevelElectron();
@@ -56,3 +56,10 @@ ZShapeEvent::~ZShapeEvent() {
   if (eTL1_!=0) delete eTL1_;
   if (eTL2_!=0) delete eTL2_;
 }
+
+void ZShapeEvent::afterLoad() {
+  math::PtEtaPhiMLorentzVector ZP4 = elec(0).p4_ + elec(1).p4_;
+  mass_=ZP4.M();
+  rap_=ZP4.Rapidity();
+}
+

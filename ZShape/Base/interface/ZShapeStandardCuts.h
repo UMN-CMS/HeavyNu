@@ -6,14 +6,15 @@
 
 /** \class ZShapeStandardCuts
   *  
-  * $Date: $
-  * $Revision: $
+  * $Date: 2007/12/05 22:41:34 $
+  * $Revision: 1.1 $
   * \author J. Mans - Minnesota
   */
 class ZShapeStandardCuts {
 public:
   void acceptanceCuts(ZShapeElectron& elec) const; 
   void ptCuts(ZShapeElectron& elec) const; 
+  void dummyCuts(ZShapeElectron& elec) const; 
 private:
   EtaAcceptance theEtaSelector_;
 };
