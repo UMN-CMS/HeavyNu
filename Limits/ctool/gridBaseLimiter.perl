@@ -49,18 +49,6 @@ print LOG "$seed_median $seed_68l $seed_68h\n";
 $lp=log($seed_95l*0.75);
 $hp=log($seed_95h*1.5);
 
-$cmd="combine -v0 -n WRmuObs -m $mw -M HybridNew -H ProfileLikelihood --rMin 0.01 --rMax 10.0 --rAbsAcc 0.01 --frequentist --testStat LHC --fork 4 $dfile|";
-print LOG "===== $cmd \n";
-open(OSUM,"$cmd");
-while (<OSUM>) {
-    print LOG;
-    if (/Limit: r < ([0-9.]+) +/) { # +\/- ([0-9.]+)) {
-        $obs_med=$1;
-    }
-}
-close(OSUM);
-print LOG "$obs_med\n";
- 
 $running=0;
 $files="";
 for ($i=0; $i<$points; $i++) {
@@ -122,22 +110,20 @@ sub limitFromGrid() {
     my($pt,$label)=@_;
     
     if ($pt>0) {
-	$cmd="combine ${dfile} -M HybridNew --grid=${ofile} --expectedFromGrid ${pt} -m ${mw}";
-	print LOG "===== $cmd \n";
-	open(CMD,"$cmd |");
-	while (<CMD>) {
-	    print LOG;
-	    if (/Limit: r < ([0-9.]+)/) {
-		$rv=$1;
-	    }
-	}
-	close(CMD);
-	print SUM "${label} = $rv\n";
-	
+	$cmd="combine -M HybridNew --grid=${ofile} --expectedFromGrid ${pt} -m ${mw} ${ifile}";
     } else {
-	#$cmd="combine ${dfile} -M HybridNew --grid=${ofile} -m ${mw}";
-	print SUM "obs = $obs_med\n";
+	$cmd="combine -M HybridNew --grid=${ofile} -m ${mw} ${ifile}";
     }
 
+    print LOG "===== $cmd \n";
+    open(CMD,"$cmd |");
+    while (<CMD>) {
+	print LOG;
+	if (/Limit: r < ([0-9.]+)/) {
+	    $rv=$1;
+	}
+    }
+    close(CMD);
+    print SUM "${label} = $rv\n";
     
 }
