@@ -107,12 +107,22 @@ double AcceptanceDB::getBestEstimate(int mw, int mn, int year) const {
   return -1;
 }
 
-void AcceptanceDB::loadDB(const char* which) {
-  if (strstr(which,"2012")!=0) {
+void AcceptanceDB::loadDB(const char* which) 
+{
+    if (strstr(which,"2012")!=0) 
+    {
 #include "db_2012.C"
-  } else if (strstr(which,"elec")!=0 || strstr(which,"ELEC")!=0 || strstr(which,"Elec")!=0) {
+    } 
+    else if (strstr(which,"gl")!=0)
+    {
+#include "db_genLimits.C"
+    }
+    else if (strstr(which,"elec")!=0 || strstr(which,"ELEC")!=0 || strstr(which,"Elec")!=0) 
+    {
 #include "db_elec_feb21.C"
-  } else { // muons
+    } 
+    else 
+    { // muons
 #include "db_muon_feb21.C"
-  }
+    }
 }

@@ -41,7 +41,7 @@ static const double lumi2010 = 0;
 static const double lumi2011 = 4971.0;
 static const double lumi2012 = 3585.0;
 
-AcceptanceDB* db, *db2011;
+AcceptanceDB* gldb, *db, *db2011;
 
 class compareByNu
 {
@@ -85,17 +85,18 @@ std::vector<XYZ> getSortedVector(int iwr, std::vector<XYZ> a, std::vector<XYZ> b
     return getSortedVector(iwr, vec);
 }
 
-double getWgtAcceptance(int imwr, int imnu, int mode)
+double getWgtAcceptance(int imwr, int imnu, int mode) 
 {
-    double correction = 1.0;
-    if(imnu < imwr / 2) correction = 0.5 * (1.0 + 2.0 * double(imnu) / double(imwr));
+    //double correction = 1.0;
+    //if(imnu < imwr / 2) correction = 0.5 * (1.0 + 2.0 * double(imnu) / double(imwr));
 
     switch(mode)
     {
         case 0:
         case 1:
         case 2:
-            return db->getBestEstimate(imwr, imnu, 2012);
+            if(imnu < imwr / 2) return gldb->getBestEstimate(imwr, imnu, 2012)/gldb->getBestEstimate(imwr, imwr/2, 2012);
+            else                return db->getBestEstimate(imwr, imnu, 2012)/db->getBestEstimate(imwr, imwr/2, 2012);
         case 3:
             //horrible hack here to fix lack of any > 3TeV 2011 acceptance 
             if(imwr <= 3000) return (lumi2011 * db2011->getBestEstimate(imwr, imnu, 2011) + lumi2012 * db->getBestEstimate(imwr, imnu, 2012)) / (lumi2011 + lumi2012);
@@ -103,6 +104,71 @@ double getWgtAcceptance(int imwr, int imnu, int mode)
     }
     return 0;
 }
+
+class AccRatioGetter
+{
+private:
+    TF1 *ratiofm;
+    TF1 *ratiofe;
+    
+    TF1 *errorfm;
+    TF1 *errorfe;
+
+public:
+    
+    AccRatioGetter()
+    {
+        //muon ratio fit
+        ratiofm = new TF1("ratioMuonFit", "(1-expo(0))/(1+expo(2))", 0, 1);
+        ratiofm->SetParameter(0, -0.538955);
+        ratiofm->SetParameter(1, -19.197885);
+        ratiofm->SetParameter(2, -1.7028);
+        ratiofm->SetParameter(3, -27.7995);
+        
+        //electron ratio fit
+        ratiofe = new TF1("ratioElecFit", "(1-expo(0))/(1+expo(2))", 0, 1);
+        ratiofe->SetParameter(0, -0.820681);
+        ratiofe->SetParameter(1, -11.683464);
+        ratiofe->SetParameter(2, 0.280774);
+        ratiofe->SetParameter(3, -61.1077);
+        
+        //muon uncertainty fit
+        errorfm = new TF1("errorMuonFit", "expo(0) + [2]", 0, 1);
+        errorfm->SetParameter(0, -1.040988);
+        errorfm->SetParameter(1, -14.253363);
+        errorfm->SetParameter(2, 0.008904);
+        
+        //elec uncertainty fit
+        errorfe = new TF1("errorElecFit", "expo(0) + [2]", 0, 1);
+        errorfe->SetParameter(0, -1.040988);
+        errorfe->SetParameter(1, -14.253363);
+        errorfe->SetParameter(2, 0.008904);
+        
+        //TCanvas *c = new TCanvas("thing","thing", 800, 800);
+        //c->cd();
+        //TH1 *h = new TH1D("dummy", "dummy", 1000, 0, 1);
+        //h->Draw();
+        //ratiofe->Draw("same *");
+    }
+    
+    double getAccRatio(double mWr, double mNu, int mode)
+    {
+        if(mode == 0) return ratiofm->Eval(mNu/mWr);
+        else if(mode == 1) return ratiofe->Eval(mNu/mWr);
+        else if(mode == 2) return (ratiofm->Eval(mNu/mWr)+ratiofe->Eval(mNu/mWr))/2;
+        else return 0.0;
+    }
+    
+    double getUncert(double mWr, double mNu, int mode)
+    {
+        if(mode == 0) return errorfm->Eval(mNu/mWr);
+        else if(mode == 1) return errorfe->Eval(mNu/mWr);
+        else if(mode == 2) return (errorfm->Eval(mNu/mWr)+errorfe->Eval(mNu/mWr))/2;
+        else return 0.0;
+    }
+    
+};
+
 
 double getEfficiency(int imwr, std::vector<XYZ> v, int mode)
 {
@@ -160,6 +226,7 @@ double getEfficiency(int imwr, std::vector<XYZ> v, int mode)
     { // Not a reference point
         double wgtLoAcc = getWgtAcceptance(v.at(nearestLo).x, v.at(nearestLo).y, mode);
         double wgtHiAcc = getWgtAcceptance(v.at(nearestHi).x, v.at(nearestHi).y, mode);
+        //std::cout << "wgtLoAcc is " << wgtLoAcc << "\twgtHiAcc is " << wgtHiAcc << std::endl ; 
 
         double loEff = v.at(nearestLo).z * wgtLoAcc;
         double hiEff = v.at(nearestHi).z * wgtHiAcc;
@@ -177,7 +244,7 @@ double getEfficiency(int imwr, std::vector<XYZ> v, int mode)
             // std::cout << "eff: " << eff << std::endl ; 
         }
     }
-    return eff;
+    return eff * getWgtAcceptance(imwr, imwr/2, mode);
 }
 
 void plotLimits(int mode = 0, int minval = -1, int maxval = -1, float xmini = 1000.0, float xmaxi = 3100.0, float ymaxi = 2000.0, std::string limitFile = "", std::string csFile = "cs.txt", std::string csFile2 = "xsecs.txt")
@@ -211,7 +278,10 @@ void plotLimits(int mode = 0, int minval = -1, int maxval = -1, float xmini = 10
     const float xmin = xmini, xmax = xmaxi, ymax = ymaxi;
 
     db = new AcceptanceDB("2012");
+    gldb = new AcceptanceDB("gl");
     db2011 = new AcceptanceDB("Muon");
+    
+    AccRatioGetter accRatioGetter;
 
     // Inizialization
     //FILE *Ptr;
@@ -323,12 +393,13 @@ void plotLimits(int mode = 0, int minval = -1, int maxval = -1, float xmini = 10
         if(sscanf(buff, "%f %f %f %f %f %f %f %f\n", &tmp_mwr, &tmp_mnu, &f3, &f4, &f5, &f6, &f7, &f8) == 8)
         {
             //printf("%f %f %f %f %f %f %f %f\n", tmp_mwr, tmp_mnu, f3, f4, f5, f6, f7, f8);
-            const XYZ p = {tmp_mwr, tmp_mnu, f3 / jscale};  
-            const XYZ q = {tmp_mwr, tmp_mnu, f4 / jscale};
-            const XYZ h68 = {tmp_mwr, tmp_mnu, f7 / jscale};
-            const XYZ l68 = {tmp_mwr, tmp_mnu, f6 / jscale};
-            const XYZ h95 = {tmp_mwr, tmp_mnu, f8 / jscale};
-            const XYZ l95 = {tmp_mwr, tmp_mnu, f5 / jscale};
+            double accRatio = 1.0 / accRatioGetter.getAccRatio(tmp_mwr, tmp_mnu, mode);
+            const XYZ p = {tmp_mwr, tmp_mnu, f3 * accRatio / jscale};  
+            const XYZ q = {tmp_mwr, tmp_mnu, f4 * accRatio / jscale};
+            const XYZ h68 = {tmp_mwr, tmp_mnu, f7 * accRatio / jscale};
+            const XYZ l68 = {tmp_mwr, tmp_mnu, f6 * accRatio / jscale};
+            const XYZ h95 = {tmp_mwr, tmp_mnu, f8 * accRatio / jscale};
+            const XYZ l95 = {tmp_mwr, tmp_mnu, f5 * accRatio / jscale};
             if(find(obsLimit.begin(), obsLimit.end(), p) == obsLimit.end()) obsLimit.push_back(p);
             if(find(expLimit.begin(), expLimit.end(), q) == expLimit.end()) expLimit.push_back(q);
             if(find(exp68hiLimit.begin(), exp68hiLimit.end(), h68) == exp68hiLimit.end()) exp68hiLimit.push_back(h68);
@@ -362,10 +433,54 @@ void plotLimits(int mode = 0, int minval = -1, int maxval = -1, float xmini = 10
             double acc = getWgtAcceptance(imwr, imnu, mode);
             if(acc < 0) continue;
             rawExpPts[std::make_pair(imwr, imnu)] = eff_wr / acc;
-            //std::cout << imwr << "\t" << imnu << "\t" << eff_wr / acc << std::endl;
+            //std::cout << imwr << "\t" << imnu << "\t" << eff_wr / acc << "\t" << acc << std::endl;
         }
     }
+    
+    // create supplamentery table
+    FILE *ofile = 0;
+    switch(mode)
+    {
+        case 0:
+            ofile = fopen("supplamentry_muon.csv", "w");
+            break;
+        case 1:
+            ofile = fopen("supplamentry_elec.csv", "w");
+            break;
+        case 2:
+            ofile = fopen("supplamentry_emu.csv", "w");
+            break;
+    }
+    if(ofile)
+    {
+        for(int iWr = minval; iWr <= maxval; iWr += 100)
+        {
+            double eff_68lo = getEfficiency(iWr, exp68loLimit, mode);
+            double eff_68hi = getEfficiency(iWr, exp68hiLimit, mode);
+            double eff_95lo = getEfficiency(iWr, exp95loLimit, mode);
+            double eff_95hi = getEfficiency(iWr, exp95hiLimit, mode);
+            std::map<std::pair<int, int>, double >::const_iterator imp;
+            for(int iNu = 100; iNu < iWr; iNu += 100)
+            {
+                std::pair<int,  int> i(iWr, iNu);
+                if((imp = rawExpPts.find(i)) != rawExpPts.end())
+                {
+                    double acc = getWgtAcceptance(iWr, iNu, mode);
+                    if(acc < 0) continue;
+                    double d68lo = (imp->second - eff_68lo / acc)*1000;
+                    double d68hi = (eff_68hi / acc - imp->second)*1000;
+                    double d95lo = (imp->second - eff_95lo / acc)*1000;
+                    double d95hi = (eff_95hi / acc - imp->second)*1000;
+                    fprintf(ofile, "%5d & %5d & %7.3f & %7.3f & %7.3f & %7.3f & %7.3f & %7.3f \\\\\n", iWr, iNu, rawObsPts[std::make_pair(iWr, iNu)]*1000, rawExpPts[std::make_pair(iWr, iNu)]*1000, d68lo, d68hi, d95lo, d95hi);
+                }
+            }
+            fprintf(ofile, "\\hline\n");
+        }
+        fclose(ofile);
+    }
+    else printf("Output file faliled to open!!!\n");
 
+    //return;
     //
     // 1D plots
     //
@@ -378,7 +493,7 @@ void plotLimits(int mode = 0, int minval = -1, int maxval = -1, float xmini = 10
         TGraphAsymmErrors* h_theory = new TGraphAsymmErrors();
         TGraphAsymmErrors* h_exp1sig = new TGraphAsymmErrors();
         TGraphAsymmErrors* h_exp2sig = new TGraphAsymmErrors();
-
+        
         double eff_68lo = getEfficiency(iwr, exp68loLimit, mode);
         double eff_68hi = getEfficiency(iwr, exp68hiLimit, mode);
         double eff_95lo = getEfficiency(iwr, exp95loLimit, mode);
@@ -396,7 +511,7 @@ void plotLimits(int mode = 0, int minval = -1, int maxval = -1, float xmini = 10
                 double d68lo = imp->second - eff_68lo / acc;
                 double d68hi = eff_68hi / acc - imp->second;
                 double d95lo = imp->second - eff_95lo / acc;
-                double d95hi = eff_95hi / acc - imp->second;
+                double d95hi = eff_95hi / acc  - imp->second;
 
                 h_exp->SetPoint(c1, (double)inu, imp->second);
                 h_exp1sig->SetPoint(c1, (double)inu, imp->second);
@@ -464,6 +579,57 @@ void plotLimits(int mode = 0, int minval = -1, int maxval = -1, float xmini = 10
         mg->Add(h_theoryL, "L");
         mg->Add(h_exp, "L");
         mg->Add(h_obs, "L");
+        // add reco curves here for comapirson of selected points
+        
+        char leglabel[128];
+        sprintf(leglabel, "               #lower[0.1]{M_{W_{R}} = %d GeV}", iwr);
+        TLegend *leg = new TLegend(0.50, 0.68, 0.94, 0.94, leglabel, "brNDC");
+        leg->SetTextSize(0.030);
+        leg->SetTextFont(42);
+        leg->SetBorderSize(1);
+        leg->SetFillColor(10);
+        leg->SetLineWidth(1);
+        leg->SetNColumns(1);
+        leg->AddEntry(h_obs, "95% C.L. Observed Limit", "L");
+        leg->AddEntry(h_exp, "95% C.L. Expected Limit", "L");
+        leg->AddEntry(h_exp1sig, "#pm1#sigma Expected Limit", "F");
+        leg->AddEntry(h_exp2sig, "#pm2#sigma Expected Limit", "F");
+        leg->AddEntry(h_theoryL, "NNLO Signal cross section", "L");
+        //leg->AddEntry(h_theory, "#pm1#sigma PDF+scale unc.", "F");
+        
+        if((mode < 2) && (iwr == 1000 || iwr == 1500 || iwr == 2000 || iwr == 3000))
+        {
+            TGraph* h_reco = new TGraph();
+            int ctr = 0;
+            
+            char fname[128];
+	    if(mode == 0)      sprintf(fname, "lim_mu_Jan31_shapeStudy_%d.txt", iwr);
+            //if(mode == 0)      sprintf(fname, "test.txt");
+            else if(mode == 1) sprintf(fname, "lim_e_Jan31_shapeStudy_%d.txt", iwr);
+            FILE * tif = fopen(fname, "r");
+            while(!feof(tif) && (c = fgets(buff, 4096, tif)) != NULL)
+            {
+                int tmp_mwr, tmp_mnu;
+                float f3, f4, f5, f6, f7, f8;
+                for(char* k = strchr(buff, ','); k != 0; k = strchr(buff, ',')) *k = ' ';
+                if(sscanf(buff, "%d %d %f %f %f %f %f %f\n", &tmp_mwr, &tmp_mnu, &f3, &f4, &f5, &f6, &f7, &f8) == 8)
+                {
+                    printf("%d %d %f %f %f %f %f %f\n", tmp_mwr, tmp_mnu, f3, f4, f5, f6, f7, f8);
+                    h_reco->SetPoint(ctr, tmp_mnu, f4);
+                    //h_reco->SetPointError(ctr, 0.0, 0.0, fabs(f4-f6), fabs(f7-f4));
+                    ctr++;
+                }
+            }
+            fclose(tif);
+            h_reco->SetMarkerStyle(20);
+            h_reco->SetMarkerColor(kRed+1);
+            h_reco->SetLineStyle(1);
+            h_reco->SetLineColor(kRed+1);
+            mg->Add(h_reco, "PEE");
+            leg->AddEntry(h_reco, "Full Reco Limits", "P");
+            
+        }
+
 
         TH1D* dummy = new TH1D("dummy", "dummy", 100, 0, double(iwr));
         switch(mode)
@@ -500,16 +666,16 @@ void plotLimits(int mode = 0, int minval = -1, int maxval = -1, float xmini = 10
 
         TLatex* mark = new TLatex(0.20, 0.95, "CMS Preliminary");
         // TLatex* mark2 = new TLatex(0.6,0.65, "#int Ldt = 227 pb^{-1} at 7 TeV") ;
-        TLatex* mark2;
-        switch(mode)
-        {
-            case 0:
-            case 1:
-            case 2:
-            case 3:
-                mark2 = new TLatex(0.70, 0.95, "19.7 fb^{-1} at 8 TeV");
-                break;
-        }
+        TLatex* mark2 = new TLatex(0.70, 0.95, "19.7 fb^{-1} at 8 TeV");
+        //switch(mode)
+        //{
+        //    case 0:
+        //    case 1:
+        //    case 2:
+        //    case 3:
+        //        mark2 = new TLatex(0.70, 0.95, "19.7 fb^{-1} at 8 TeV");
+        //        break;
+        //}
             
         mark->SetNDC(kTRUE);
         mark->SetTextSize(0.035);
@@ -524,22 +690,7 @@ void plotLimits(int mode = 0, int minval = -1, int maxval = -1, float xmini = 10
         //TLatex* mark2 = new TLatex(0.62*mg->GetXaxis()->GetXmax(),1.03*mg->GetYaxis()->GetXmax(), "227 pb^{-1} at 7 TeV") ;
         //mark2->SetTextSize(0.04);
 
-        char leglabel[128];
-        sprintf(leglabel, "               #lower[0.1]{M_{W_{R}} = %d GeV}", iwr);
-
-        TLegend *leg = new TLegend(0.50, 0.68, 0.94, 0.94, leglabel, "brNDC");
-        leg->SetTextSize(0.030);
-        leg->SetTextFont(42);
-        leg->SetBorderSize(1);
-        leg->SetFillColor(10);
-        leg->SetLineWidth(1);
-        leg->SetNColumns(1);
-        leg->AddEntry(h_obs, "95% C.L. Observed Limit", "L");
-        leg->AddEntry(h_exp, "95% C.L. Expected Limit", "L");
-        leg->AddEntry(h_exp1sig, "#pm1#sigma Expected Limit", "F");
-        leg->AddEntry(h_exp2sig, "#pm2#sigma Expected Limit", "F");
-        leg->AddEntry(h_theoryL, "NNLO Signal cross section", "L");
-        //leg->AddEntry(h_theory, "#pm1#sigma PDF+scale unc.", "F");
+        
         leg->Draw();
 
         mark->Draw();
@@ -865,17 +1016,17 @@ void plotLimits(int mode = 0, int minval = -1, int maxval = -1, float xmini = 10
     {
         case 0:
             text.DrawLatex(xmin + 100, .92 * ymax, "M_{N_{#mu}} > M_{W_{R}}");
-            mark->DrawLatex(0.220,0.9575, "CMS Preliminary    #sqrt{s} = 8 TeV    19.7 fb^{-1}");
+            mark->DrawLatex(0.220,0.9575, "        CMS    #sqrt{s} = 8 TeV    19.7 fb^{-1}");
             //mark->DrawLatex(0.71, 0.96, "12.1 fb^{-1} at 8 TeV");
             break;
         case 1:
             text.DrawLatex(xmin + 100, .92 * ymax, "M_{N_{e}} > M_{W_{R}}");
-            mark->DrawLatex(0.220,0.9575, "CMS Preliminary    #sqrt{s} = 8 TeV    19.7 fb^{-1}");
+            mark->DrawLatex(0.220,0.9575, "        CMS    #sqrt{s} = 8 TeV    19.7 fb^{-1}");
             //mark->DrawLatex(0.71, 0.96, "12.3 fb^{-1} at 8 TeV");
             break;
         case 2:
             text.DrawLatex(xmin + 100, .92 * ymax, "M_{N_{e,#mu,#tau}} > M_{W_{R}}");
-            mark->DrawLatex(0.220,0.9575, "CMS Preliminary    #sqrt{s} = 8 TeV    19.7 fb^{-1}");
+            mark->DrawLatex(0.220,0.9575, "        CMS    #sqrt{s} = 8 TeV    19.7 fb^{-1}");
             //mark->DrawLatex(0.71, 0.96, "3.6 fb^{-1} at 8 TeV");
             break;
         case 3:

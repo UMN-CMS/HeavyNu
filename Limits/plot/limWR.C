@@ -171,7 +171,7 @@ void limWR(const char* fname,int which, int smooth=0,const char* asUsed=0,double
 
             if (which == 3)
             {
-                corr = 3.0 / 2.0; // correct to all leptons
+                corr = 1.0;// we now apply this to the xsec 3.0 / 2.0; // correct to all leptons
             }
 
 
@@ -200,7 +200,7 @@ void limWR(const char* fname,int which, int smooth=0,const char* asUsed=0,double
 	  mwt[nx]=xmw;
 
 	  if (which==3) {
-	    xsec[nx]*=8.0/3.0; // from Pythia
+	    xsec[nx]*=8.0/3.0 * 2.0/3; // from Pythia (2/3 is to remove tau contribution)
 	  }
 
 	  //      xsec[nx]/=0.75;
@@ -271,8 +271,9 @@ void limWR(const char* fname,int which, int smooth=0,const char* asUsed=0,double
     dummy->GetYaxis()->SetTitle("#sigma(pp#rightarrow W_{R}) #times BR(W_{R}#rightarrow eejj) [fb]");
     dummy->GetYaxis()->SetRangeUser(0.2, 100);
   } else if (which==3) {
-    dummy->GetYaxis()->SetTitle("#sigma(pp#rightarrow W_{R}) #times BR(W_{R}#rightarrow (ee+#mu#mu+#tau#tau)jj) [fb]");
+    dummy->GetYaxis()->SetTitle("#sigma(pp#rightarrow W_{R}) #times BR(W_{R}#rightarrow (ee+#mu#mu)jj) [fb]");
     dummy->GetYaxis()->SetTitleSize(0.055);
+    dummy->GetYaxis()->SetRangeUser(0.15, 100);
   } else if (which==4) {
     dummy->GetYaxis()->SetTitle("#sigma(pp#rightarrow W_{R}) #times BR(W_{R}#rightarrow #mu#mujj)/#sigma_{g_{R}=g_{L}}");
   }
