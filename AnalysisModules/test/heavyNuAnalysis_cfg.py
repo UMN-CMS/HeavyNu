@@ -11,7 +11,7 @@ isData=not isMC
 cmsswRelease = 53
 
 #--- Signal MC flags ---#
-isMCsignal=False
+isMCsignal=True
 
 #--- Data Run era flags ---#
 # options 2012AB, 2012Ar, 2012Cr, 2012Cp, 2012Ce, 2012D
@@ -80,7 +80,7 @@ process.options = cms.untracked.PSet(
 
 # source
 process.source = cms.Source("PoolSource",
-                            fileNames=cms.untracked.vstring('/store/mc/Summer12_DR53X/WRToNuLeptonToLLJJ_MW-2900_MNu-1450_TuneZ2star_8TeV-pythia6-tauola/AODSIM/PU_S10_START53_V7A-v1/0000/30672247-B1EC-E111-A906-00215E222220.root')
+                            fileNames=cms.untracked.vstring('/store/mc/Summer12_DR53X/WRToNuLeptonToLLJJ_MWR-3000_MNu-187_TuneZ2star_8TeV-pythia6-tauola/AODSIM/PU_S10_START53_V19-v1/00000/10D3DD5A-0162-E311-805A-0025907B509E.root')
                             #file:/data/whybee0a/user/dahmes/multiSkim/V03-00-07/prompt/run2012D/noDupes/mar25/muTopMultiSkim_plep50_35_pemu50_35_2012Dprompt_mar25_noDupes/muTopMultiSkim_plep50_35_pemu50_35_2012Dprompt_mar25_noDupes_000.root
                             #file:/local/cms/user/pastika/heavyNuAnalysis_2012/skims/pL1Skim/2012D.root')
                             #file:/local/cms/user/pastika/heavyNuAnalysis_2012/skims/sherpadyfile.root')

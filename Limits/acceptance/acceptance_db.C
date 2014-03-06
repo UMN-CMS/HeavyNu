@@ -113,10 +113,10 @@ void AcceptanceDB::loadDB(const char* which)
     {
 #include "db_2012.C"
     } 
-    else if (strstr(which,"gl")!=0)
-    {
-#include "db_genLimits.C"
-    }
+//    else if (strstr(which,"gl")!=0)
+//    {
+//#include "db_genLimits.C"
+//    }
     else if (strstr(which,"elec")!=0 || strstr(which,"ELEC")!=0 || strstr(which,"Elec")!=0) 
     {
 #include "db_elec_feb21.C"

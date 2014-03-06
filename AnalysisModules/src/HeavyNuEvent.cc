@@ -13,7 +13,10 @@ HeavyNuEvent::HeavyNuEvent(anal_type theMode)
     nElectrons = 0 ;
     nMuons = 0;
     numNuLJetsMatched = 0;
+    numNuLepsMatched = 0;
     isBJet1 = isBJet2 = false;
+    dRGenQ = 999.9;
+    mWRgen = -1.0;
 
     // Protection: set all scale factors to 1 by default
     j1scale = 1.0 ;
@@ -34,9 +37,12 @@ HeavyNuEvent::HeavyNuEvent(const HeavyNuEvent& hne)
     nMuons = hne.nMuons;
     nElectrons = hne.nElectrons;
     numNuLJetsMatched = hne.numNuLJetsMatched;
+    numNuLepsMatched = hne.numNuLepsMatched;
     isBJet1 = hne.isBJet1;
     isBJet2 = hne.isBJet2;
     numBJets = hne.numBJets;
+    dRGenQ = hne.dRGenQ;
+    mWRgen = hne.mWRgen;
 
     j1scale = hne.j1scale;
     j2scale = hne.j2scale;

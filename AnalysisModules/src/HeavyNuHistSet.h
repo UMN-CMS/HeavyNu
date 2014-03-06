@@ -35,6 +35,7 @@ private:
     TH2 *ptL1VsPtL2ss, *ptL1VsPtL2os;
     TH1 *etaL1, *etaL2, *etaJet1, *etaJet2;
     TH1 *phiL1, *phiL2, *phiJet1, *phiJet2;
+    TH1 *mJet1, *mJet2;
     TH1 *dEtaL, *dPhiL, *dEtaJet, *dPhiJet;
     TH2 *dEtaPhiL, *dEtaPhiJet;
     TH1 *dRminL1jet, *dRminL2jet, *dRminLJet;
@@ -42,10 +43,10 @@ private:
     TH2 *ptrelVsdRminL1jet, *ptrelVsdRminL2jet;
     TH2 *jetID2d;
 
-    TH1 *mindRjet_genjet, *maxdRjet_genjet, *nuLMatchedJets;
+    TH1 *mindRjet_genjet, *maxdRjet_genjet, *nuLMatchedJets, *nuLMatchedLeps, *dRgenQ, *dRgenJ, *dRJet;
 
     TH1 *mLL, *mLLOS, *mLLSS, *diLCharge, *mLLZoom;
-    TH1 *mWR, *mNuR1, *mNuR2, *mJJ, *ptWR, *st, *mLQmin;
+    TH1 *mWR, *mNuR1, *mNuR2, *mJJ, *ptWR, *st, *mLQmin, *mWRgen;
     TH2 *mNuR2D, *jetPtvsNum;
     TH1 *L1ptFracWRmass;
 

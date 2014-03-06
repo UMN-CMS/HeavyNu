@@ -65,6 +65,8 @@ public:
 
     bool isMC, pfJets;
     int numNuLJetsMatched;
+    int numNuLepsMatched;
+    double dRGenQ;
     // mc_class=0 (something else), 1=ee, 2=mm, 3=tau tau
     int mc_class;
 
@@ -104,7 +106,7 @@ public:
     double dRminL1jet, dRminL2jet;
     double ptrelL1, ptrelL2;
 
-    double mWR, mJJ, mLL, mNuR1, mNuR2, mLQmin;
+    double mWR, mJJ, mLL, mNuR1, mNuR2, mLQmin, mWRgen;
 
     std::string btagName;
 };

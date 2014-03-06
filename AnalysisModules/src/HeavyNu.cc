@@ -112,7 +112,7 @@ bool HeavyNu::isWrDaughter(const reco::Candidate* mother, int pdgid)
 {
     for(size_t i = 0; i < mother->numberOfMothers(); i++)
     {
-        if((mother->mother(i)->pdgId() == pdgid || isWrDaughter(mother->mother(i), pdgid))) return true;
+        if((abs(mother->mother(i)->pdgId()) == pdgid || isWrDaughter(mother->mother(i), pdgid))) return true;
     }
     return false;
 }
@@ -774,40 +774,78 @@ void HeavyNu::studyJetVertex(edm::Handle<pat::JetCollection>& pJets,
     }
 }
 
+void HeavyNu::studyLepMatching(HeavyNuEvent& hnuEvent)
+{
+    //std::cout << "nLep: " << hnuEvent.nLeptons << std::endl;
+    if(hnuEvent.nLeptons < 2) return;
+    const reco::GenParticle *gl1 = 0, *gl2 = 0;
+    switch(analysisMode_)
+    {
+        case HeavyNuEvent::HNUMU:
+            gl1 = hnuEvent.mu1.genLepton();
+            gl2 = hnuEvent.mu2.genLepton();
+            break;
+        case HeavyNuEvent::HNUE:
+            gl1 = hnuEvent.e1.genLepton();
+            gl2 = hnuEvent.e2.genLepton();
+            break;
+        case HeavyNuEvent::TAUX:
+        case HeavyNuEvent::TOP:
+        case HeavyNuEvent::QCD:
+        case HeavyNuEvent::CLO:
+            return;
+    }
+    
+    if(!gl1 || !gl2) return;
+    
+    bool gml1 = isWrDaughter(gl1, 9900024);
+    bool gml2 = isWrDaughter(gl2, 9900024);
+    hnuEvent.numNuLepsMatched = (int)gml1 + (int)gml2;
+}
+
 void HeavyNu::studyJetMatching(HeavyNuEvent& hnuEvent, edm::Handle<std::vector<reco::GenJet> > genjets)
 {
-    if(hnuEvent.nJets < 2) return;  //safty against to few jets.  
-
+    if(hnuEvent.nJets < 2) return;  //safty against to few jets.
+    
     //here we match the reco jets to gen jets
     double mindR1 = 100, mindR2 = 100;
+    reco::GenJet *rj1 = 0, *rj2 = 0;
     for(std::vector<reco::GenJet>::const_iterator igj = genjets->begin(); igj != genjets->end(); ++igj)
     {
         double dR1 = deltaR(hnuEvent.j1.p4(), igj->p4());
         double dR2 = deltaR(hnuEvent.j2.p4(), igj->p4());
-
-        if(dR1 < mindR1)
+        
+        if(dR1 <= dR2 && dR1 < mindR1 && dR1 < 0.2)
         {
             mindR1 = dR1;
             hnuEvent.gj1 = *igj;
+            rj1 = (reco::GenJet*)igj.base();
         }
-        if(dR2 < mindR2)
+        else if(dR1 > dR2 && dR2 < mindR2 && dR2 < 0.2)
         {
             mindR2 = dR2;
             hnuEvent.gj2 = *igj;
+            rj2 = (reco::GenJet*)igj.base();
         }
     }
 
     //after finding the matching gen jets we track their parentage and try to match them to a Nu_L
     bool gmj1 = false, gmj2 = false;
-    std::vector<const reco::GenParticle*> mothers = hnuEvent.gj1.getGenConstituents();
-    for(std::vector<const reco::GenParticle*>::const_iterator iM = mothers.begin(); iM != mothers.end(); ++iM)
+    if(rj1)
     {
-        if((gmj1 |= isWrDaughter(*iM, pdgid_))) break;
+        std::vector<const reco::GenParticle*> mothers = rj1->getGenConstituents();
+        for(std::vector<const reco::GenParticle*>::const_iterator iM = mothers.begin(); iM != mothers.end(); ++iM)
+        {
+            if((gmj1 |= isWrDaughter(*iM, pdgid_))) break;
+        }
     }
-    mothers = hnuEvent.gj2.getGenConstituents();
-    for(std::vector<const reco::GenParticle*>::const_iterator iM = mothers.begin(); iM != mothers.end(); ++iM)
+    if(rj2)
     {
-        if((gmj2 |= isWrDaughter(*iM, pdgid_))) break;
+        std::vector<const reco::GenParticle*> mothers = rj2->getGenConstituents();
+        for(std::vector<const reco::GenParticle*>::const_iterator iM = mothers.begin(); iM != mothers.end(); ++iM)
+        {
+            if((gmj2 |= isWrDaughter(*iM, pdgid_))) break;
+        }
     }
     hnuEvent.numNuLJetsMatched = (int)gmj1 + (int)gmj2;
 }
@@ -1272,9 +1310,47 @@ bool HeavyNu::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
         hists.weights->Fill(hnuEvent.eventWgt);
         // generator information
         edm::Handle<reco::GenParticleCollection> genInfo;
+        const reco::Candidate *gq1 = 0, *gq2 = 0, *gl1 = 0, *gl2 = 0;
         if(iEvent.getByLabel("genParticles", genInfo))
         {
             hnuEvent.decayID(*genInfo);
+	    for(reco::GenParticleCollection::const_iterator git = genInfo->begin(); git != genInfo->end(); ++git)
+	    {
+	        if(abs(git->pdgId()) == pdgid_)
+		{
+		    for(unsigned int ig = 0; ig < git->numberOfDaughters(); ig++)
+                    {   
+                        if(abs(git->daughter(ig)->pdgId()) >0 && abs(git->daughter(ig)->pdgId()) <= 6)
+                        {
+                            if(!gq1) {gq1 = git->daughter(ig); std::cout << "q1 is: " << git->daughter(ig)->pdgId() << std::endl;}
+                            else if(!gq2) {gq2 = git->daughter(ig); std::cout << "q2 is: " << git->daughter(ig)->pdgId() << std::endl;}
+                        }
+                        else if(abs(git->daughter(ig)->pdgId()) == 11 || abs(git->daughter(ig)->pdgId()) == 13)
+                        {
+                            //std::cout << "THERE" << std::endl;
+                            gl2 = git->daughter(ig);
+                            std::cout << "l2 is: " << git->daughter(ig)->pdgId() << "\t" << git->daughter(ig)->pt() << std::endl;
+                        }
+                    }
+		}
+                else if(abs(git->pdgId()) == 9900024)
+                {
+                    for(unsigned int ig = 0; ig < git->numberOfDaughters(); ig++)
+                    {
+                        if(abs(git->daughter(ig)->pdgId()) == 11 || abs(git->daughter(ig)->pdgId()) == 13)
+                        {
+                            gl1 = git->daughter(ig);
+                            std::cout << "l1 is: " << git->daughter(ig)->pdgId() << "\t" << git->daughter(ig)->pt() << std::endl;
+                        }
+                    }
+                }
+	    }
+            std::cout << std::endl;
+            double dR = 999.9;
+            if(gq1 && gq2) dR = deltaR(gq1->eta(), gq1->phi(), gq2->eta(), gq2->phi());
+            hnuEvent.dRGenQ = dR;
+            //std::cout << gq1 << "\t" << gq2 << "\t" << gl1 << "\t" << gl2 << std::endl;
+            if(gq1 && gq2 && gl1 && gl2) hnuEvent.mWRgen = (gq1->p4() + gq2->p4() + gl1->p4() + gl2->p4()).M();
         }
         iEvent.getByLabel("ak5GenJets", genjets);
     }
@@ -1484,10 +1560,10 @@ bool HeavyNu::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     if(hnuEvent.nJets >= 2) hnuEvent.isBJet2 = hnuEvent.j2.bDiscriminator(btagName) >= minBtagDiscVal;
 
     //conduct gen study on jets
-    //if(hnuEvent.isMC)
-    //{
-    //    studyJetMatching(hnuEvent, genjets);
-    //}
+    if(hnuEvent.isMC)
+    {
+        studyJetMatching(hnuEvent, genjets);
+    }
 
     if(hnuEvent.nJets >= 1) hnuEvent.tjV1 = hnu::caloJetVertex(hnuEvent.j1, *jptJets);
     if(hnuEvent.nJets >= 2) hnuEvent.tjV2 = hnu::caloJetVertex(hnuEvent.j2, *jptJets);
@@ -1625,6 +1701,11 @@ bool HeavyNu::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 
     if (hnuEvent.nLeptons < 2) return false ;
+    
+    if(hnuEvent.isMC)
+    {
+        studyLepMatching(hnuEvent);
+    }
 
     // QCD closure test: Exactly one jet
     if (hnuEvent.nJets == 1 && hnu::jetID(hnuEvent.j1) > 0)

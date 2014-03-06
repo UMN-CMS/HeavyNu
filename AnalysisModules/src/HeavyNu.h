@@ -189,6 +189,7 @@ private:
     bool isWrDaughter(const reco::Candidate* mother, int pdgid);
     reco::Candidate* findGenTau(edm::Handle<reco::GenParticleCollection> gpc, bool primary);
     
+    void studyLepMatching(HeavyNuEvent& hnuEvent);
     void studyJetMatching(HeavyNuEvent& hnuEvent, edm::Handle<std::vector<reco::GenJet> > genjets);
     
     void selectMuons(std::vector<pat::Muon>& muCands, std::vector< std::pair<pat::Jet, float> >& jetCands,

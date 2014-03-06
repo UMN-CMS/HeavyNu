@@ -84,6 +84,12 @@ void HeavyNuHistSet::book(TFileDirectory *td, const std::string& post)
     phiJet1 = td->make<TH1F > ("phiJ1", t.c_str(), 30, -3.14159, 3.14159);
     t = "#phi(j_{2}) " + post;
     phiJet2 = td->make<TH1F > ("phiJ2", t.c_str(), 30, -3.14159, 3.14159);
+    
+    t = "M(j_{1}) " + post;
+    mJet1 = td->make<TH1F > ("mJ1", t.c_str(), 100, 0., 1000.);
+    t = "M(j_{2}) " + post;
+    mJet2 = td->make<TH1F > ("mJ2", t.c_str(), 100, 0., 1000.);
+    
 
     t = "#Delta#eta(j_{1},j_{2}) " + post;
     dEtaJet = td->make<TH1F > ("dEtaJet", t.c_str(), 100, 0, 5);
@@ -112,11 +118,20 @@ void HeavyNuHistSet::book(TFileDirectory *td, const std::string& post)
     jetID2d->GetYaxis()->SetBinLabel(3, "Tight");
 
     t = "min #DeltaR(jet, Wr genjet) " + post;
-    mindRjet_genjet = td->make<TH1F > ("mindRjet_genjet", t.c_str(), 70, 0.0, 7.0);
+    mindRjet_genjet = td->make<TH1F > ("dR1jet_genjet", t.c_str(), 70, 0.0, 7.0);
     t = "max #DeltaR(jet, Wr genjet) " + post;
-    maxdRjet_genjet = td->make<TH1F > ("maxdRjet_genjet", t.c_str(), 70, 0.0, 7.0);
+    maxdRjet_genjet = td->make<TH1F > ("dR2jet_genjet", t.c_str(), 70, 0.0, 7.0);
     t = "number of Nu matched Jets " + post;
     nuLMatchedJets = td->make<TH1F > ("nuLMatchedJets", t.c_str(), 3, -0.5, 2.5);
+    t = "number of Nu matched Leps " + post;
+    nuLMatchedLeps = td->make<TH1F > ("nuLMatchedLeps", t.c_str(), 3, -0.5, 2.5);
+    t = "min #DeltaR(gen Q1, gen Q2) " + post;
+    dRgenQ = td->make<TH1F > ("dRgenQ", t.c_str(), 280, 0.0, 7.0);
+    t = "min #DeltaR(gen J1, gen J2) " + post;
+    dRgenJ = td->make<TH1F > ("dRgenJet", t.c_str(), 280, 0.0, 7.0);
+    t = "min #DeltaR(J1, J2) " + post;
+    dRJet = td->make<TH1F > ("dRJet", t.c_str(), 280, 0.0, 7.0);
+    
     // ----------  MET histograms     ----------
 
     t = "MET distribution " + post;
@@ -168,6 +183,8 @@ void HeavyNuHistSet::book(TFileDirectory *td, const std::string& post)
     st = td->make<TH1F > ("st", t.c_str(), 100, 0, 4000);
     t = "M(LQ)_{min} " + post;
     mLQmin = td->make<TH1F > ("mLQmin", t.c_str(), 100, 0, 4000);
+    t = "M(W_{R}) gen" + post;
+    mWRgen = td->make<TH1F > ("mWRgen", t.c_str(), 100, 0, 4000);
     
     t = "p_{T}(M(W_{R})) " + post;
     ptWR = td->make<TH1F > ("ptWR", t.c_str(), 100, 0, 1000);
@@ -309,6 +326,7 @@ void HeavyNuHistSet::fill(HeavyNuEvent& hne)
         ptJet1->Fill(hne.j1.pt(), wgt);
         etaJet1->Fill(hne.j1.eta(), wgt);
         phiJet1->Fill(hne.j1.phi(), wgt);
+        mJet1->Fill(hne.j1.mass(), wgt);
         btagJet1->Fill(j1bdisc, wgt);
 
         if(hne.nJets >= 2 && hne.nLeptons >= 2)
@@ -318,6 +336,7 @@ void HeavyNuHistSet::fill(HeavyNuEvent& hne)
             ptJet2->Fill(hne.j2.pt(), wgt);
             etaJet2->Fill(hne.j2.eta(), wgt);
             phiJet2->Fill(hne.j2.phi(), wgt);
+            mJet2->Fill(hne.j2.mass(), wgt);
             btagJet2->Fill(j2bdisc, wgt);
 
             numBjets->Fill((int)hne.isBJet1 + (int)hne.isBJet2, wgt);
@@ -334,6 +353,7 @@ void HeavyNuHistSet::fill(HeavyNuEvent& hne)
             mNuR2->Fill(hne.mNuR2, wgt);
             mNuR2D->Fill(hne.mNuR1, hne.mNuR2, wgt);
             mJJ->Fill(hne.mJJ, wgt);
+            mWRgen->Fill(hne.mWRgen, wgt);
 
             L1ptFracWRmass->Fill(hne.l1pt / hne.mWR, wgt);
 
@@ -376,10 +396,17 @@ void HeavyNuHistSet::fill(HeavyNuEvent& hne)
         {
             double dR1 = deltaR(hne.j1.p4(), hne.gj1.p4());
             double dR2 = deltaR(hne.j2.p4(), hne.gj2.p4());
-            mindRjet_genjet->Fill(std::min(dR1, dR2), wgt);
-            maxdRjet_genjet->Fill(std::max(dR1, dR2), wgt);
+            mindRjet_genjet->Fill(dR1, wgt);
+            maxdRjet_genjet->Fill(dR2, wgt);
             nuLMatchedJets->Fill(hne.numNuLJetsMatched, wgt);
+            nuLMatchedLeps->Fill(hne.numNuLepsMatched, wgt);
+            dRgenQ->Fill(hne.dRGenQ, wgt);
+            
+            double dR = deltaR(hne.gj1.p4(), hne.gj2.p4());
+            dRgenJ->Fill(dR, wgt);
         }
+        double dRJ = deltaR(hne.j1.p4(), hne.j2.p4());
+        dRJet->Fill(dRJ, wgt);
     }
 
     if(!hne.pfJets) jetID2d->Fill(jet1id, jet2id, wgt);
