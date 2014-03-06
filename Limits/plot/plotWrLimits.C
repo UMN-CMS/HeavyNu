@@ -343,7 +343,7 @@ void plotLimits(int mode = 0, int minval = -1, int maxval = -1, float xmini = 10
             nFlavorScale = 1.0;
             break;
         case 2:
-            nFlavorScale = 8.0 / 3.0;
+            nFlavorScale = 8.0 / 3.0 * 2.0/3;
             break;
         case 3:
             nFlavorScale = 1.0;
@@ -465,13 +465,12 @@ void plotLimits(int mode = 0, int minval = -1, int maxval = -1, float xmini = 10
                 std::pair<int,  int> i(iWr, iNu);
                 if((imp = rawExpPts.find(i)) != rawExpPts.end())
                 {
-                    double acc = getWgtAcceptance(iWr, iNu, mode);
-                    if(acc < 0) continue;
-                    double d68lo = (imp->second - eff_68lo / acc)*1000;
-                    double d68hi = (eff_68hi / acc - imp->second)*1000;
-                    double d95lo = (imp->second - eff_95lo / acc)*1000;
-                    double d95hi = (eff_95hi / acc - imp->second)*1000;
-                    fprintf(ofile, "%5d & %5d & %7.3f & %7.3f & %7.3f & %7.3f & %7.3f & %7.3f \\\\\n", iWr, iNu, rawObsPts[std::make_pair(iWr, iNu)]*1000, rawExpPts[std::make_pair(iWr, iNu)]*1000, d68lo, d68hi, d95lo, d95hi);
+                    double accRatio = accRatioGetter.getAccRatio(iWr, iNu, mode);
+                    //double d68lo = (imp->second - eff_68lo / acc)*1000;
+                    //double d68hi = (eff_68hi / acc - imp->second)*1000;
+                    //double d95lo = (imp->second - eff_95lo / acc)*1000;
+                    //double d95hi = (eff_95hi / acc - imp->second)*1000;
+                    fprintf(ofile, "%5d & %5d & %6.2f & %6.2f & %7.3f\\\\\n", iWr, iNu, rawObsPts[std::make_pair(iWr, iNu)]*1000, rawExpPts[std::make_pair(iWr, iNu)]*1000, db->getBestEstimate(iWr, iNu, 2012) * accRatio);
                 }
             }
             fprintf(ofile, "\\hline\n");
@@ -480,7 +479,7 @@ void plotLimits(int mode = 0, int minval = -1, int maxval = -1, float xmini = 10
     }
     else printf("Output file faliled to open!!!\n");
 
-    //return;
+    return;
     //
     // 1D plots
     //
@@ -911,13 +910,13 @@ void plotLimits(int mode = 0, int minval = -1, int maxval = -1, float xmini = 10
     for(int i = 0; i < observedPlot->GetN(); i++)
     {
         observedPlot->GetPoint(i, xx, yy);
-        std::cout << xx << "\t" << yy << std::endl;
+        std::cout << xx << "\t" << yy << "\t" << xx/yy << std::endl;
     }
     std::cout << "EXPECTED" << std::endl;
     for(int i = 0; i < expectedPlot->GetN(); i++)
     {
         expectedPlot->GetPoint(i, xx, yy);
-        if(xx < 1000) std::cout << xx << "\t" << yy << std::endl;
+        std::cout << xx << "\t" << yy << "\t" << xx/yy <<std::endl;
     }
 
     TCanvas *twoDlimits = new TCanvas("twoDlimits", "twoDlimits", 800, 800);

@@ -580,7 +580,7 @@ TH1* HnuPlots::histFromTuple(std::string label, std::string histValues, double t
             else if(histV.compare("dPhiL") == 0 || histV.compare("dPhiJ") == 0) vlim.push_back(Limits(-3.1415926535, 3.1415926535, 100));
             else if(histV.compare("run") == 0) vlim.push_back(Limits(190000, 210000, 1000));
             else if(histV.compare("cutlevel") == 0) vlim.push_back(Limits(-1.5, 9.5, 11));
-            else if(histV.compare("idL1") == 0 || histV.compare("idL2") == 0) vlim.push_back(Limits(-0.5, 1.5, 2));
+            else if(histV.compare("idL1") == 0 || histV.compare("idL2") == 0 || histV.compare("bJ1") == 0 || histV.compare("bJ2") == 0) vlim.push_back(Limits(-0.5, 1.5, 2));
             else printf("No limits set for variable: %s", histV.c_str());
         }
     }
@@ -650,6 +650,7 @@ TH1* HnuPlots::histFromTuple(std::string label, std::string histValues, double t
         
         //int nbjet = 0;
         //if(iT->first.j1B + iT->first.j2B < nbjet) continue;
+        if(iT->first.j1B + iT->first.j2B >= 1) printf("b run: %d\n", iT->first.run);
 
         // prepair appropriate variables for fill
         for(std::vector<std::string>::const_iterator ihlabel = histQs.begin(); ihlabel != histQs.end(); ++ihlabel)
@@ -736,6 +737,8 @@ double HnuPlots::getTupleVar(std::string var, const HeavyNuTree::HNuSlopeFitInfo
     else if(var.compare("ptJ2") == 0)  return (tpls.j2pt );
     else if(var.compare("etaJ2") == 0) return (tpls.j2eta);
     else if(var.compare("phiJ2") == 0) return (tpls.j2phi);
+    else if(var.compare("bJ1") == 0) return (tpls.j1B);
+    else if(var.compare("bJ2") == 0) return (tpls.j2B);
     else if(var.compare("pL1") == 0)   return (pLmax);
     else if(var.compare("pL2") == 0)   return (pLmin);
     else if(var.compare("SS") == 0)    return (tpls.cL1 == tpls.cL2);
@@ -1346,6 +1349,8 @@ void HnuPlots::plot1D()
             TH1 **tgs = new TH1*[systematics.size()];
             int itg = 0;
             const int ebColors[] = {kYellow, kGreen}, NEBCOLORS = sizeof(ebColors) / sizeof(int);
+            double chi2 = 0.0;
+            double chi2_2 = 0.0;
             for(std::vector< std::vector<float> >::const_iterator sit = systematics.begin(); sit != systematics.end(); ++sit)
             {
                 char hname[128];
@@ -1356,12 +1361,31 @@ void HnuPlots::plot1D()
                     tgs[itg]->SetBinContent(i, 1.0);
                     if(i - 1 < (int)sit->size()) tgs[itg]->SetBinError(i, fabs(sit->at(i - 1)));
                     else if(sit->size() > 0) tgs[itg]->SetBinError(i, fabs(sit->back()));
+                    
+                    if(sit == systematics.begin())
+                    {
+                        std::cout << "HELLO!" << std::endl;
+                        double nbg = 0.0;
+                        for(std::vector<HistStruct>::const_iterator bghr = bghists.begin(); bghr != bghists.end(); ++bghr)
+                        {
+                            nbg += bghr->hist->GetBinContent(i);
+                        }
+                        double syst_error = nbg * fabs(sit->at(i - 1));
+                        double stat_error = datahist.hist->GetBinError(i);
+                        chi2 += pow(nbg - datahist.hist->GetBinContent(i), 2)/(syst_error*syst_error + stat_error*stat_error);
+                        chi2_2 += pow(nbg - datahist.hist->GetBinContent(i), 2)/(stat_error*stat_error);
+                        //std::cout << nbg << "\t" << 
+                    }
                 }
                 tgs[itg]->SetFillColor(ebColors[itg % NEBCOLORS]);
                 tgs[itg]->SetMarkerStyle(0);
                 tgs[itg]->Draw("E2 same");
                 itg++;
+                
+                
             }
+            printf("Chi^2 = %f\n", chi2);
+            printf("Chi^2 (stat only) = %f\n", chi2_2);
 
             if(systematics.size())
             {
@@ -2765,7 +2789,7 @@ const static double k_mm_ddtop = /*0.620166*/0.631595,                          
 const static double k_ee_ddtop = /*0.518549*/0.524452 * lumi2012ee / lumi2012mm, k_ee_Zscale = /*0.963943*//*0.939217 0.973471 1.05259*/ 1.00043, k_ee_NNLOZ = 1.1893;
 
 //data files
-const std::string data_ee("/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData_4/Elec-Run2012ABCD-22Jan2013-v1.root");
+const std::string data_ee("/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData_2/Elec-Run2012ABCD-22Jan2013-v1.root");
 const std::string data_mm("/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData_2/Mu-Run2012ABCD-22Jan2013-v1.root");
 const std::string data_em("/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData_2/Mu-Run2012ABCD-22Jan2013-v1.root");
 
@@ -2997,7 +3021,7 @@ void setBgandData(int mode, HnuPlots::FileStruct& data, std::vector<std::vector<
             bgTT.push_back(HnuPlots::FileStruct(   "t#bar{t}", mc_tbarW, "hNuEMu/"     + cutlevels[cutlevel] + "/" + plot, lumi2012ee, xsectbarW, - k_ee_ddtop / NtbarW,                           "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
             bgTT.push_back(HnuPlots::FileStruct(   "t#bar{t}", mc_ZZ,    "hNuEMu/"     + cutlevels[cutlevel] + "/" + plot, lumi2012ee, xsecZZ,    - k_ee_ddtop / NZZ,                              "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
             bgTT.push_back(HnuPlots::FileStruct(   "t#bar{t}", mc_WZ,    "hNuEMu/"     + cutlevels[cutlevel] + "/" + plot, lumi2012ee, xsecWZ,    - k_ee_ddtop / NWZ,                              "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
-            bgTT.push_back(HnuPlots::FileStruct(   "t#bar{t}", mc_WW,    "hNuEMu/"     + cutlevels[cutlevel] + "/" + plot, lumi2012ee, xsecWW,    - k_ee_ddtop / NWW,                              "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
+            //bgTT.push_back(HnuPlots::FileStruct(   "t#bar{t}", mc_WW,    "hNuEMu/"     + cutlevels[cutlevel] + "/" + plot, lumi2012ee, xsecWW,    - k_ee_ddtop / NWW,                              "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
             //bgOther.push_back(HnuPlots::FileStruct("Other",    mc_tW,    "hNuMu40/"    + cutlevels[cutlevel] + "/" + plot, lumi2012ee, xsectW,     0.5 / NtW,                                      "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
             //bgOther.push_back(HnuPlots::FileStruct("Other",    mc_tbarW, "hNuMu40/"    + cutlevels[cutlevel] + "/" + plot, lumi2012ee, xsectbarW,  0.5 / NtbarW,                                   "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
             bgOther.push_back(HnuPlots::FileStruct("Other",    mc_tW,    "hNuE/"       + cutlevels[cutlevel] + "/" + plot, lumi2012ee, xsectW,    1.0 / NtW,                                       "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
@@ -3279,8 +3303,8 @@ void plot2012(int mode = 0, int cutlevel = 5, std::string plot = "mWR", int rebi
     {
         //vsig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.0 TeV",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2000_MNu-1000_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.013339, 1.214 / 113 * 12, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
         //vsig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.4 TeV",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2400_MNu-1200_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.003225, 1.164, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-        //vsig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-        vsig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MWR-3000_MNu-187_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140*100, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+        vsig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+        //vsig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MWR-3000_MNu-187_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140*100, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
         sig.push_back(vsig);
     }
     else if(!hft && mode == 2)

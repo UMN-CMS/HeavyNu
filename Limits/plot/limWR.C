@@ -284,13 +284,13 @@ void limWR(const char* fname,int which, int smooth=0,const char* asUsed=0,double
   if (which==0 || which==1) {
     tl=new TLegend(0.55,0.55,0.99,0.90);//,"CL_{S} Method          M_{N_{#mu}}=M_{W_{R}}/2");
     //tl->SetHeader("CL_{S} Method    95% CL");
-     tl->SetHeader("CL_{S} Method    M_{N_{#mu}}= M_{W_{R}}/2");
+     tl->SetHeader("CL_{S} Method    M_{#scale[1.25]{N_{#scale[1.5]{#mu}}}}= M_{#scale[1.25]{W_{R}}}/2");
   } else if (which==3) {
-    tl=new TLegend(0.55,0.55,0.99,0.90,"CL_{S} Method          M_{N}=M_{W_{R}}/2");
+    tl=new TLegend(0.55,0.55,0.99,0.90,"CL_{S} Method          M_{#scale[1.25]{N}}=M_{#scale[1.25]{W_{R}}}/2");
   } else if (which==2) {
-    tl=new TLegend(0.55,0.55,0.99,0.90,"CL_{S} Method          M_{N_{e}}=M_{W_{R}}/2");
+    tl=new TLegend(0.55,0.55,0.99,0.90,"CL_{S} Method          M_{#scale[1.25]{N_{#scale[1.5]{e}}}}=M_{#scale[1.25]{W_{R}}}/2");
   } else if (which==4) {
-    tl=new TLegend(0.16,0.90,0.90,0.72,"CL_{S} Method          M_{N_{#mu}}=M_{W_{R}}/2");
+    tl=new TLegend(0.16,0.90,0.90,0.72,"CL_{S} Method          M_{N_{#mu}}=M_{#scale[1.25]{W_{R}}}/2");
     tl->SetNColumns(2);
   }
   tl->SetTextFont(42);
@@ -385,7 +385,7 @@ void limWR(const char* fname,int which, int smooth=0,const char* asUsed=0,double
 
   if (which==3) {
     tl->AddEntry(tg_theory,"Theory Expectation","L");
-    tl->AddEntry((TObject*)0,"(g_{R}=g_{L}, M_{N}_{e}=M_{N}_{#mu}=M_{N}_{#tau})","");
+    tl->AddEntry((TObject*)0,"(g_{R}=g_{L}, M_{#scale[1.25]{N}_{#scale[1.5]{e}}}=M_{#scale[1.25]{N}_{#scale[1.5]{#mu}}}=M_{#scale[1.25]{N}_{#scale[1.5]{#tau}}})","");
   } else {
     tl->AddEntry(tg_theoryerror,"Theory (g_{R}= g_{L})","L");
   }
