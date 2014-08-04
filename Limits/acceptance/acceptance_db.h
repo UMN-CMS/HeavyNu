@@ -2,6 +2,7 @@
 #define acceptance_db_included
 
 #include <vector>
+#include <map>
 
 class AcceptanceDB {
  public:
@@ -24,6 +25,7 @@ class AcceptanceDB {
 
 
   std::vector<AcceptPt> m_DB;
+  std::map<int, std::map<int, AcceptPt*> > m_mmm;
   double interpol2d(int mw, int mn, 
 		    int year,
 		    const AcceptPt& a,const AcceptPt& b,

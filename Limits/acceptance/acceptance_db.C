@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <iostream>
+
 void AcceptanceDB::add(int mw, int mn, double a2010, double a2011, double a2012) {
   AcceptPt pt;
   pt.mw=mw;
@@ -10,7 +12,22 @@ void AcceptanceDB::add(int mw, int mn, double a2010, double a2011, double a2012)
   pt.a2010=a2010;
   pt.a2011=a2011;
   pt.a2012=a2012;
-  m_DB.push_back(pt);
+  //std::map<int, std::map<int, AcceptPt*> >::const_iterator it1;
+  //if((it1 = m_mmm.find(mw)) != m_mmm.end())
+  //{
+  //    std::map<int, AcceptPt*>::const_iterator it2;
+  //    if((it2 = it1->second.find(mw)) != it1->second.end())
+  //    {
+  //        it2->second->a2010 = (pt.a2010 + it2->second->a2010)/2;
+  //        it2->second->a2011 = (pt.a2011 + it2->second->a2011)/2;
+  //        it2->second->a2012 = (pt.a2012 + it2->second->a2012)/2;
+  //    }
+  //}
+  //else
+  //{
+      m_DB.push_back(pt);
+  //    m_mmm[mw][mn] = &m_DB.back();
+  //}
 }
 
 static double interpol1d(double x, double x1, double y1, double x2, double y2) {
@@ -109,14 +126,20 @@ double AcceptanceDB::getBestEstimate(int mw, int mn, int year) const {
 
 void AcceptanceDB::loadDB(const char* which) 
 {
-    if (strstr(which,"2012")!=0) 
+    if (strstr(which,"2012_muon")!=0) 
     {
-#include "db_2012.C"
+        std::cout << "MUON!" << endl;
+#include "db_muon_2012.C"
     } 
-//    else if (strstr(which,"gl")!=0)
-//    {
-//#include "db_genLimits.C"
-//    }
+    else if (strstr(which,"gl_muon")!=0)
+    {
+#include "db_genLimits.C"
+    }
+    else if (strstr(which,"2012_elec")!=0) 
+    {
+        std::cout << "ELEC!" << endl;
+#include "db_elec_2012.C"
+    }
     else if (strstr(which,"elec")!=0 || strstr(which,"ELEC")!=0 || strstr(which,"Elec")!=0) 
     {
 #include "db_elec_feb21.C"

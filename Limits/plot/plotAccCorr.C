@@ -36,11 +36,13 @@ void plotAccCorr(int channel, int mWr = 1500)
 
     gStyle->SetPalette(1);
 
-    AcceptanceDB *db = new AcceptanceDB("2012");
+    AcceptanceDB *db = 0;
 
     std::map<int, std::map<int, double> > recoAccMap;
     if(channel == 0)
     {
+        db = new AcceptanceDB("2012_muon");
+                 
         recoAccMap[1000][62]   = 0.007;
         recoAccMap[1000][125]  = 0.086;
         recoAccMap[1000][187]  = 0.208;
@@ -125,6 +127,8 @@ void plotAccCorr(int channel, int mWr = 1500)
     }
     else if(channel == 1)
     {
+        db = new AcceptanceDB("2012_elec");
+        
         recoAccMap[1000][62]   = 0.005863;
         recoAccMap[1000][125]  = 0.062181;
         recoAccMap[1000][187]  = 0.170653;
@@ -205,6 +209,8 @@ void plotAccCorr(int channel, int mWr = 1500)
         uncertMap[3000][2500] = 1.01108;
 
     }
+    
+    if(db == 0) return;
 
     TCanvas * c1[nmwrs];
     //c1->SetMargin(0.18, 0.13, 0.13, 0.08);
@@ -345,6 +351,7 @@ void plotAccCorr(int channel, int mWr = 1500)
     dummy2->GetXaxis()->SetNdivisions(6, 5, 0);
  
     TF1 *fit2 = new TF1("fit2", "1-expo(0)", 0, 1);
+    fit2->SetParLimits(0, -10, 0);
  
     TLegend *leg2 = new TLegend(0.3, 0.17, 0.83, 0.4);
     leg2->SetFillStyle(0);

@@ -20,7 +20,18 @@ void plotEff2D(int channel)
 
     gStyle->SetPalette(1);
 
-    AcceptanceDB *db = new AcceptanceDB("2012");
+    AcceptanceDB *db;
+    AcceptanceDB *gdb = new AcceptanceDB("2012");
+    if(channel == 0)  
+    {
+        db = new AcceptanceDB("2012_muon");
+        gdb = new AcceptanceDB("gl_muon");
+    }
+    else if(channel == 1)
+    {
+        db = new AcceptanceDB("2012_elec");
+        gdb = new AcceptanceDB("gl_elec");
+    }
 
     double elecEff[] = {0.40991, 0.43299, 0.46256, 0.47850, 0.49682, 0.50857, 0.51957, 0.53121, 0.53734, 0.54517, 0.55140, 0.54497, 0.55318, 0.56327, 0.56309, 0.56904, 0.56930, 0.57698, 0.57210, 0.57619, 0.58068, 0.57916, 0.57855, 0.57927, 0.58021, 0.58921, 0.58235, 0.58422, 0.59192, 0.58760, 0.58752 };
     double muonEff[] = {0.48311, 0.52121, 0.54649, 0.56841, 0.58167, 0.60076, 0.61871, 0.63428, 0.63401, 0.64491, 0.65453, 0.65548, 0.66099, 0.66346, 0.67203, 0.67863, 0.68455, 0.67886, 0.68715, 0.69472, 0.68600, 0.69171, 0.69157, 0.69888, 0.69309, 0.69731, 0.69738, 0.69302, 0.70030, 0.69767, 0.70181 };
@@ -42,7 +53,9 @@ void plotEff2D(int channel)
         for(int iNu = 1; iNu <= 30; iNu++)
         {
             int mWR = 900 + iWr * 100, mNu = iNu * 100;
-            double accCor = db->getBestEstimate(mWR, mNu, 2012) / db->getBestEstimate(mWR, mWR / 2, 2012);
+            double accCor = 1.0;
+            if(mNu < mWR / 2) accCor = gdb->getBestEstimate(mWR, mNu, 2012) / gdb->getBestEstimate(mWR, mWR / 2, 2012);
+            else              accCor = db->getBestEstimate(mWR, mNu, 2012) / db->getBestEstimate(mWR, mWR / 2, 2012);
             double eff = 1.0;
             if(channel == 0) eff = muonEff[iWr];
             else if(channel == 1) eff = elecEff[iWr];
@@ -69,12 +82,12 @@ void plotEff2D(int channel)
     
     if(channel == 0) 
     {
-        c1->Print("eff2D_muon.pdf");
+        c1->Print("eff2D_muon.eps");
         c1->Print("eff2D_muon.png");
     }
     else if(channel == 1) 
     {
-        c1->Print("eff2D_elec.pdf");
+        c1->Print("eff2D_elec.eps");
         c1->Print("eff2D_elec.png");
     }
 }

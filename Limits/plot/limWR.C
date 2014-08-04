@@ -123,7 +123,7 @@ void smoothSG(float pts[], int n, int mode=4) {
 
 #include "tdrstyle.C"
 
-void limWR(const char* fname,int which, int smooth=0,const char* asUsed=0,double lumi=12.0) {
+void limWR(const char* fname,int which, int smooth=0,const char* asUsed=0,double lumi=19.7) {
   float mw[1000], mn[1000], mwt[1000];
   float obs[1000], exp[1000], expm2s[1000],expm1s[1000],expp1s[1000],expp2s[1000],xsec[1000];
   float obs_ns[1000],exp_ns[1000];
@@ -163,6 +163,7 @@ void limWR(const char* fname,int which, int smooth=0,const char* asUsed=0,double
         if (sscanf(buffer, "%f %f %f %f %f %f %f %f ", mw + n, mn + n,
                    obs + n, exp + n, expm2s + n, expm1s + n, expp1s + n, expp2s + n) == 8)
         {
+            mw[n] /= 1000.0;
             if (correctToMWMN2)
             {
                 corr = 1.0 / accRatio(mw[n]);
@@ -193,11 +194,14 @@ void limWR(const char* fname,int which, int smooth=0,const char* asUsed=0,double
     buffer[0]=0;
     fgets(buffer,1000,fx);
     if (sscanf(buffer,"%d %f %f %f %f",&ecmx, &xmw,&xmn,&rawx,&kf)==5) {
+        xmw /= 1000.0;
+        xmn /= 1000.0;
       if (ecmx!=ecm) continue;
       for (int search=0; search<n; search++) {
-	if (fabs(xmw-mw[search])<1.0 && fabs(xmn-mn[search])<1.0) {
+	if (fabs(xmw-mw[search])<1.0/1000.0 && fabs(xmn-mn[search])<1.0/1000.0) {
 	  xsec[nx]=rawx*kf*pbr;
 	  mwt[nx]=xmw;
+      std::cout << mwt[nx] << std::endl;
 
 	  if (which==3) {
 	    xsec[nx]*=8.0/3.0 * 2.0/3; // from Pythia (2/3 is to remove tau contribution)
@@ -238,7 +242,7 @@ void limWR(const char* fname,int which, int smooth=0,const char* asUsed=0,double
   
   //  gROOT->SetStyle("Plain");
   TCanvas* c1=new TCanvas("c1","c1",800,800);
-  c1->SetTopMargin(0.07);
+  c1->SetTopMargin(0.05);
   c1->SetLeftMargin(0.15);
   c1->SetRightMargin(0.05);
   c1->SetBottomMargin(0.13);
@@ -247,7 +251,7 @@ void limWR(const char* fname,int which, int smooth=0,const char* asUsed=0,double
 
   //  TH1* dummy=new TH1F("dummy","",30,1000,3000);
   TH1* dummy;
-  if (which!=0) dummy=new TH1F("dummy","",30,1000,3500);
+  if (which!=0) dummy=new TH1F("dummy","",30,1.0,3.5);
   else dummy=new TH1F("dummy","",30,1000,2600);
 
   //  dummy->SetMinimum(0.5);
@@ -262,7 +266,7 @@ void limWR(const char* fname,int which, int smooth=0,const char* asUsed=0,double
   }
   dummy->SetStats(0);
   dummy->GetXaxis()->SetNdivisions(507);
-  dummy->GetXaxis()->SetTitle("M_{W_{R}} [GeV]");
+  dummy->GetXaxis()->SetTitle("M_{W_{R}} [TeV]");
   
   if (which==0 || which==1) {
     dummy->GetYaxis()->SetTitle("#sigma(pp#rightarrow W_{R}) #times BR(W_{R}#rightarrow #mu#mujj) [fb]");
@@ -273,7 +277,7 @@ void limWR(const char* fname,int which, int smooth=0,const char* asUsed=0,double
   } else if (which==3) {
     dummy->GetYaxis()->SetTitle("#sigma(pp#rightarrow W_{R}) #times BR(W_{R}#rightarrow (ee+#mu#mu)jj) [fb]");
     dummy->GetYaxis()->SetTitleSize(0.055);
-    dummy->GetYaxis()->SetRangeUser(0.15, 100);
+    dummy->GetYaxis()->SetRangeUser(0.2, 100);
   } else if (which==4) {
     dummy->GetYaxis()->SetTitle("#sigma(pp#rightarrow W_{R}) #times BR(W_{R}#rightarrow #mu#mujj)/#sigma_{g_{R}=g_{L}}");
   }
@@ -282,18 +286,38 @@ void limWR(const char* fname,int which, int smooth=0,const char* asUsed=0,double
 
   TLegend* tl;
   if (which==0 || which==1) {
-    tl=new TLegend(0.55,0.55,0.99,0.90);//,"CL_{S} Method          M_{N_{#mu}}=M_{W_{R}}/2");
+    tl=new TLegend(0.55,0.66,0.99,0.87);//,"CL_{S} Method          M_{N_{#mu}}=M_{W_{R}}/2");
     //tl->SetHeader("CL_{S} Method    95% CL");
-     tl->SetHeader("CL_{S} Method    M_{#scale[1.25]{N_{#scale[1.5]{#mu}}}}= M_{#scale[1.25]{W_{R}}}/2");
+    // tl->SetHeader("CL_{S} Method    M_{#scale[1.25]{N_{#scale[1.5]{#mu}}}}= M_{#scale[1.25]{W_{R}}}/2");
+    //tl->SetHeader("M_{#scale[1.25]{N_{#scale[1.5]{#mu}}}}= M_{#scale[1.25]{W_{R}}}/2");
+    TLatex *latex = new TLatex(0.57, 0.89, "M_{#scale[1.25]{N_{#scale[1.5]{#mu}}}}= M_{#scale[1.25]{W_{R}}}/2");
+    latex->SetNDC();
+    latex->SetTextSize(0.032);
+    latex->SetTextFont(42);
+    latex->Draw();
   } else if (which==3) {
-    tl=new TLegend(0.55,0.55,0.99,0.90,"CL_{S} Method          M_{#scale[1.25]{N}}=M_{#scale[1.25]{W_{R}}}/2");
+    //tl=new TLegend(0.60,0.55,0.99,0.90,"CL_{S} Method          M_{#scale[1.25]{N}}=M_{#scale[1.25]{W_{R}}}/2");
+      tl=new TLegend(0.535,0.66,0.975,0.88);//,"M_{#scale[1.25]{N}}=M_{#scale[1.25]{W_{R}}}/2");
+      TLatex *latex = new TLatex(0.555, 0.895, "M_{#scale[1.25]{N}} = M_{#scale[1.25]{W_{R}}}/2");
+      latex->SetNDC();
+      latex->SetTextSize(0.032);
+      latex->SetTextFont(42);
+      latex->Draw();
   } else if (which==2) {
-    tl=new TLegend(0.55,0.55,0.99,0.90,"CL_{S} Method          M_{#scale[1.25]{N_{#scale[1.5]{e}}}}=M_{#scale[1.25]{W_{R}}}/2");
+    //tl=new TLegend(0.55,0.55,0.99,0.90,"CL_{S} Method          M_{#scale[1.25]{N_{#scale[1.5]{e}}}}=M_{#scale[1.25]{W_{R}}}/2");
+      tl = new TLegend(0.55,0.66,0.99,0.87);//,"M_{#scale[1.25]{N_{#scale[1.5]{e}}}}=M_{#scale[1.25]{W_{R}}}/2");
+      TLatex *latex = new TLatex(0.57, 0.89, "M_{#scale[1.25]{N_{#scale[1.5]{e}}}}= M_{#scale[1.25]{W_{R}}}/2");
+      latex->SetNDC();
+      latex->SetTextSize(0.032);
+      latex->SetTextFont(42);
+      latex->Draw();
   } else if (which==4) {
-    tl=new TLegend(0.16,0.90,0.90,0.72,"CL_{S} Method          M_{N_{#mu}}=M_{#scale[1.25]{W_{R}}}/2");
+    tl=new TLegend(0.16,0.90,0.90,0.72,"CL_{S} Method          M_{N_{#mu}}= M_{#scale[1.25]{W_{R}}}/2");
+    tl=new TLegend(0.16,0.90,0.90,0.72,"M_{N_{#mu}}= M_{#scale[1.25]{W_{R}}}/2");
     tl->SetNColumns(2);
   }
   tl->SetTextFont(42);
+  tl->SetTextSize(0.032);
   tl->SetFillStyle(0);
   tl->SetBorderSize(0);
 
@@ -337,57 +361,61 @@ void limWR(const char* fname,int which, int smooth=0,const char* asUsed=0,double
   tg_e1s->SetFillColor(kGreen);
   tg_e1s->Draw("F SAME");
 
+  TGraph* tg_theory=new TGraph(nx,mwt,xsec);
+  tg_theory->SetLineWidth(3);
+  tg_theory->SetLineColor(kRed+2);
+  tg_theory->SetLineStyle(0);
+  tg_theory->SetFillStyle(3002);
+  tg_theory->SetFillColor(kRed);
+  
+  
+  double tesx[] = {1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9};
+  //double tesy[] = {0.072374,0.069254,0.067429,0.066900,0.067665,0.069726,0.073082,0.077733,0.083679,0.090920,0.099457,0.109289,0.120415,0.132838,0.146555,0.161567,0.177875,0.195478,0.214375,0.234569,0.256057,0.278840,0.302919,0.328293,0.354962,0.382926,0.412185,0.442740,0.474589};
+  double tesy[] = {0.051550, 0.056700, 0.061725, 0.066400, 0.071525, 0.077125, 0.082925, 0.089725, 0.097000, 0.103725, 0.112475, 0.121300, 0.131475, 0.142200, 0.151650, 0.163925, 0.178325, 0.192050, 0.211700, 0.235250, 0.267625, 0.292425, 0.328975, 0.34375, 0.3775, 0.4152, 0.4496, 0.0, 0.0, 0.0};
+  TGraph* tg_theoryerror=new TGraph();
+  int iValidPoint = 0, ivps1m;
+  for(int i = 0; i < 29; i++)
+  {
+      //if(fabs(tesx[i] - mwt[iValidPoint]) > 1.0/1000.0) continue;
+      tg_theoryerror->SetPoint(iValidPoint, tesx[i], xsec[iValidPoint]*(1-tesy[i]));
+      std::cout << tesx[i] << "\t" << mwt[iValidPoint] << std::endl;
+      iValidPoint++;
+  }
+  ivps1m = iValidPoint;
+  for(int i = 28; i >= 0; i--)
+  {
+      if(fabs(tesx[i] - mwt[2*ivps1m-iValidPoint - 1]) > 1.0/1000.0) continue;
+      tg_theoryerror->SetPoint(iValidPoint, tesx[i], xsec[2*ivps1m-iValidPoint - 1]*(1+tesy[i]));
+      iValidPoint++;
+  }
+  tg_theoryerror->SetLineWidth(3);
+  tg_theoryerror->SetLineColor(kRed+2);
+  tg_theoryerror->SetFillColor(kRed);
+  tg_theoryerror->SetFillStyle(3002);
+  tg_theoryerror->Draw("F SAME");
+  
+  tg_theory->Draw("L SAME");
+  
   TGraph* tg_exp=new TGraph(n,mw,exp);
   tg_exp->SetLineWidth(2);
   tg_exp->SetLineColor(kBlue);
   tg_exp->SetLineStyle(2);
   tg_exp->Draw("L SAME");
 
-
-  TGraph* tg_theory=new TGraph(nx,mwt,xsec);
-  tg_theory->SetLineWidth(3);
-  tg_theory->SetLineColor(kRed);
-  tg_theory->SetLineStyle(0);
-  tg_theory->Draw("L SAME");
-  
-  double tesx[] = {1000.0, 1100.0, 1200.0, 1300.0, 1400.0, 1500.0, 1600.0, 1700.0, 1800.0, 1900.0, 2000.0, 2100.0, 2200.0, 2300.0, 2400.0, 2500.0, 2600.0, 2700.0, 2800.0, 2900.0, 3000.0, 3100.0, 3200.0, 3300.0, 3400.0, 3500.0, 3600.0, 3700.0, 3800.0, 3900.0};
-  double tesy[] = {0.072374,0.069254,0.067429,0.066900,0.067665,0.069726,0.073082,0.077733,0.083679,0.090920,0.099457,0.109289,0.120415,0.132838,0.146555,0.161567,0.177875,0.195478,0.214375,0.234569,0.256057,0.278840,0.302919,0.328293,0.354962,0.382926,0.412185,0.442740,0.474589};
-  TGraph* tg_theoryerror=new TGraph();
-  int iValidPoint = 0, ivps1m;
-  for(int i = 0; i < 29; i++)
-  {
-      if(fabs(tesx[i] - mwt[iValidPoint]) > 1.0) continue;
-      tg_theoryerror->SetPoint(iValidPoint, tesx[i], xsec[iValidPoint]*(1-tesy[i]));
-      iValidPoint++;
-  }
-  ivps1m = iValidPoint;
-  for(int i = 28; i >= 0; i--)
-  {
-      if(fabs(tesx[i] - mwt[2*ivps1m-iValidPoint - 1]) > 1.0) continue;
-      tg_theoryerror->SetPoint(iValidPoint, tesx[i], xsec[2*ivps1m-iValidPoint - 1]*(1+tesy[i]));
-      iValidPoint++;
-  }
-  tg_theoryerror->SetLineWidth(3);
-  tg_theoryerror->SetLineColor(kRed);
-  tg_theoryerror->SetFillColor(kRed);
-  tg_theoryerror->SetFillStyle(3002);
-  tg_theoryerror->Draw("F SAME");
-
   TGraph* tg_obs=new TGraph(n,mw,obs);
   tg_obs->SetLineWidth(2);
   tg_obs->Draw("L SAME");
 
-  tl->AddEntry(tg_obs,"Observed Limit","L");
-  tl->AddEntry(tg_exp,"Expected Limit","L");
+  tl->AddEntry(tg_obs,"Observed limit","L");
+  tl->AddEntry(tg_exp,"Expected limit","L");
   tl->AddEntry(tg_e1s,"Expected #pm 1 #sigma","F");
   tl->AddEntry(tg_e2s,"Expected #pm 2 #sigma","F");
-
-
+  
   if (which==3) {
-    tl->AddEntry(tg_theory,"Theory Expectation","L");
-    tl->AddEntry((TObject*)0,"(g_{R}=g_{L}, M_{#scale[1.25]{N}_{#scale[1.5]{e}}}=M_{#scale[1.25]{N}_{#scale[1.5]{#mu}}}=M_{#scale[1.25]{N}_{#scale[1.5]{#tau}}})","");
+    tl->AddEntry(tg_theory,"Theory","LF");
+    tl->AddEntry((TObject*)0,"g_{R}= g_{L}, M_{#scale[1.25]{N}_{#scale[1.5]{e}}}= M_{#scale[1.25]{N}_{#scale[1.5]{#mu}}}= M_{#scale[1.25]{N}_{#scale[1.5]{#tau}}}","");
   } else {
-    tl->AddEntry(tg_theoryerror,"Theory (g_{R}= g_{L})","L");
+    tl->AddEntry(tg_theoryerror,"Theory (g_{R}= g_{L})","LF");
   }
 
   TText *text;
@@ -461,13 +489,28 @@ void limWR(const char* fname,int which, int smooth=0,const char* asUsed=0,double
      texa->SetLineWidth(2);
      texa->Draw();
      */
-     sprintf(buffer,"CMS    #sqrt{s} = %d TeV    %.1f fb^{-1}",ecm,lumi);
-     TLatex *   tex = new TLatex(0.280,0.94,buffer);
+     //sprintf(buffer,"CMS    #sqrt{s} = %d TeV    %.1f fb^{-1}",ecm,lumi);
+     //sprintf(buffer,"        CMS    #sqrt{s} = %d TeV    %.1f fb^{-1}",ecm,lumi);
+     //sprintf(buffer, "CMS    #sqrt{s} = %d TeV    L = %0.1f fb^{-1}",ecm,lumi);
+     sprintf(buffer, "%0.1f fb^{-1} (%d TeV)", lumi, ecm);
+     //mark->DrawLatex(0.220, 0.9575, "        CMS    #sqrt{s} = 8 TeV    19.7 fb^{-1}");
+     TLatex *   tex = new TLatex(c1->GetLeftMargin()+(1-c1->GetLeftMargin()-c1->GetRightMargin())/2, 0.9575,buffer);
      tex->SetNDC();
      tex->SetTextFont(42);
-     tex->SetTextSize(0.05);
-     tex->SetLineWidth(2);
-     tex->Draw();
+     tex->SetTextAlign(31);
+     tex->SetTextSize(0.04 * 1.1);
+     tex->DrawLatex(1 - c1->GetRightMargin(), 0.9575, buffer);
+     tex->SetTextAlign(13);
+     tex->SetTextSize(0.04 * 1.1 * 1.25);
+     tex->SetTextFont(61);
+     //tex->DrawLatex(c1->GetLeftMargin() + 0.025, 1 - (c1->GetTopMargin() + 0.025), "#splitline{CMS}{#scale[0.7]{#it{Preliminary}}}");
+     tex->DrawLatex(c1->GetLeftMargin() + 0.025, 1 - (c1->GetTopMargin() + 0.025), "CMS");
+     //tex->SetNDC();
+     //tex->SetTextAlign(21);
+     //tex->SetTextFont(42);
+     //tex->SetTextSize(0.04 * 1.1);
+     //tex->SetLineWidth(2);
+     //tex->Draw();
    }
 
    /*
