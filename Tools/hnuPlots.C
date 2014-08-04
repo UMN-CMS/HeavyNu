@@ -1114,7 +1114,7 @@ void HnuPlots::plot1D()
         c1->Divide(1, 1);
         c1->cd(1);
         gPad->SetPad("p1", "p1", 0, 0, 1, 1, kWhite, 0, 0);
-        gPad->SetBottomMargin(0.15);
+        gPad->SetBottomMargin(0.12);
         //fontScale = 8.0 / 9;
         fontScale = 6.5 / 8;
     }
@@ -1310,6 +1310,11 @@ void HnuPlots::plot1D()
         mark.SetTextFont(52);
         mark.DrawLatex(gPad->GetLeftMargin() + 0.12, 1 - (gPad->GetTopMargin() - 0.017), "unpublished");
     }
+    
+    //mark.SetTextAlign(11);
+    //mark.SetTextSize(0.04 * 1.1 * 8 / 6.5 * fontScale);
+    //mark.SetTextFont(42);
+    //mark.DrawLatex(0.5, 0.57, "1.8 < M_{eejj} < 2.2 TeV"); // #scale[0.8]{#it{Preliminary}}");
     
     //mark.SetTextSize(0.04 * 7 / 6.5 * fontScale);
     //mark.DrawLatex(gPad->GetLeftMargin() + 0.025, 1 - (gPad->GetTopMargin() + 0.065), "#it{Preliminary}");
@@ -2764,7 +2769,7 @@ void HnuPlots::autoSetHistogramAxisTitle(int mode)
                 if(name.find("mWR") < name.size()) *axislabel = "M_{#mu#mujj} [TeV]";
                 else if(name.find("mWR_1b") < name.size()) *axislabel = "M_{#mu#mubj} [TeV]";
                 else if(name.find("mWR_2b") < name.size()) *axislabel = "M_{#mu#mubb} [TeV]";
-                else if(name.find("mLL") < name.size()) *axislabel = "M_{#mu#mu} [TeV]";
+                else if(name.find("mLL") < name.size()) *axislabel = "M_{#mu#mu} [GeV]";
                 else if(name.find("mLL_1b") < name.size()) *axislabel = "M_{#mu#mu} (1 b-tag) [GeV]";
                 else if(name.find("mLL_2b") < name.size()) *axislabel = "M_{#mu#mu} (2 b-tag) [GeV]";
                 else if(name.find("mLLZoom") < name.size()) *axislabel = "M_{#mu#mu} [GeV]";
@@ -2790,15 +2795,15 @@ void HnuPlots::autoSetHistogramAxisTitle(int mode)
                 if(name.find("mWR_1b") < name.size()) *axislabel = "M_{eebj} [TeV]";
                 else if(name.find("mWR_2b") < name.size()) *axislabel = "M_{eebb} [TeV]";
                 else if(name.find("mWR") < name.size()) *axislabel = "M_{eejj} [TeV]";
-                else if(name.find("mLL") < name.size()) *axislabel = "M_{ee} [TeV]";
+                else if(name.find("mLL") < name.size()) *axislabel = "M_{ee} [GeV]";
                 else if(name.find("mLL_1b") < name.size()) *axislabel = "M_{ee} (1 b-tag) [GeV]";
                 else if(name.find("mLL_2b") < name.size()) *axislabel = "M_{ee} (2 b-tag) [GeV]";
                 else if(name.find("mLLZoom") < name.size()) *axislabel = "M_{ee} [GeV]";
                 else if(name.find("mLLNorm") < name.size()) *axislabel = "M_{ee} [TeV]";
                 //else if(name.find("mNuR1") < name.size()) *axislabel = "M_{N_{e_{#lower[-0.2]{1}}}} [GeV]";
                 //else if(name.find("mNuR2") < name.size()) *axislabel = "M_{N_{e_{#lower[-0.2]{2}}}} [GeV]";
-                else if(name.find("mNuR1") < name.size()) *axislabel = "M_{N_{1}} [GeV]";
-                else if(name.find("mNuR2") < name.size()) *axislabel = "M_{N_{2}} [GeV]";
+                else if(name.find("mNuR1") < name.size()) *axislabel = "M_{e_{#scale[1.3]{1}}jj} [GeV]";
+                else if(name.find("mNuR2") < name.size()) *axislabel = "M_{e_{#scale[1.3]{2}}jj} [GeV]";
                 else if(name.find("mOuR1") < name.size()) *axislabel = "M_{eej1} [GeV]";
                 else if(name.find("mOuR2") < name.size()) *axislabel = "M_{eej2} [GeV]";
                 else if(name.find("ptL1") < name.size()) *axislabel = "p_{T}(e_{1}) [GeV]";
@@ -3405,7 +3410,7 @@ void makeCutString(const int cutlevel, std::string plotname, std::string& retStr
     retStr = std::string(cutString);
 }
 
-void plot2012(int mode = 0, int cutlevel = 5, std::string plot = "mWR", int rebin = 5, bool log = true, double xmin = 0.0, double xmax = 3500.0, bool autoY = true)
+void plot2012(int mode = 0, int cutlevel = 5, std::string plot = "mWR", int rebin = 5, bool log = true, double xmin = 0.0, double xmax = 3500.0, bool autoY = true, double ymin = 0.0, double ymax = 0.0)
 {
     using namespace std;
 
@@ -3464,8 +3469,9 @@ void plot2012(int mode = 0, int cutlevel = 5, std::string plot = "mWR", int rebi
         
         //sample gen signal point -- Sean add individual signal points here
         //Format  (modify stared fields)     label*           filepath*                                                                                          tupple folder / plotname  lumi  xsec*   kfactor/Nevts*  the rest is a magic incantation that should not be changed
-        vsig.push_back( HnuPlots::FileStruct("test signal"  ,  "/home/ugrad/pastika/cms/HeavyNu/CMSSW_5_3_8/src/HeavyNu/AnalysisModules/HeavyNu_accept_1000_25.root", "hNuGen2012/" + plot, lumi, 0.002286, 1.140/1000, "", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+        //vsig.push_back( HnuPlots::FileStruct("test signal"  ,  "/home/ugrad/pastika/cms/HeavyNu/CMSSW_5_3_8/src/HeavyNu/AnalysisModules/HeavyNu_accept_1000_25.root", "hNuGen2012/" + plot, lumi, 0.002286, 1.140/1000, "", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
         //vsig2.push_back(HnuPlots::FileStruct("test signal 2",  "/home/ugrad/pastika/cms/HeavyNu/CMSSW_5_3_8/src/HeavyNu/AnalysisModules/HeavyNu_accept_1000_250.root", "hNuGen2012/" + plot, lumi, 0.002286, 1.140/1000, "", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+        vsig.push_back( HnuPlots::FileStruct("M(WR)=2100 M(N)=100"  ,  "/home/ugrad/pastika/cms/HeavyNu/CMSSW_5_3_6_patch1/src/HeavyNu/Tools/analyzed_WR_2100_to_LNu_Nu_1200_10kevts.root", "hNuGen/" + plot, lumi, 16.93, 1.199/10000, "", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
         
         //Then add the individual signal points to the list of signal points
         sig.push_back(vsig);
@@ -3552,10 +3558,11 @@ void plot2012(int mode = 0, int cutlevel = 5, std::string plot = "mWR", int rebi
     }
     if(autoY) hps.setYAxisTitle("please auto set the axis");
     else hps.setYAxisTitle("Events");
+    if(ymax > ymin) hps.setYRange(ymin, ymax);
     hps.autoSetHistogramAxisTitle(mode);
     hps.setRebin(rebin);
     hps.setLog(log);
-    hps.setCompPlot(true);
+    hps.setCompPlot(false);
     hps.setXRange(xmin, xmax);
     hps.plot();
     hps.integrals(600, 60000);
