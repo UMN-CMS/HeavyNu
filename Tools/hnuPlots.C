@@ -1371,7 +1371,7 @@ void HnuPlots::plot1D()
         //double d2ymax = max(2.2, min(4.5, chdata->GetMaximum(25.0)*1.2));
         double d2ymin = max(0.4, chdata->GetMinimum(0) - 0.4);
         std::cout << "2dymin: " << d2ymin << std::endl;
-        double d2ymax = min(4.5, max(1.7, chdata->GetMaximum(25.0)*1.3));
+        double d2ymax = min(4.5, max(2.2, chdata->GetMaximum(25.0)*1.3));
         TH1 *dummy2 = new TH1F("dummy2", "dummy2", 1000, datahist.hist->GetBinLowEdge(1), datahist.hist->GetBinLowEdge(datahist.hist->GetNbinsX()) + datahist.hist->GetBinWidth(datahist.hist->GetNbinsX()));
         dummy2->GetXaxis()->SetTitle(xaxislabel.c_str());
         dummy2->GetXaxis()->SetTitleOffset(1.05);
@@ -1465,6 +1465,13 @@ void HnuPlots::plot1D()
         //}
 
         //tfrh->Draw("same hist");
+        
+        TLegend *leg2 = new TLegend(0.18, 0.65, 0.45, 0.95);
+        leg2->SetFillStyle(0); //Color(0);
+        leg2->SetBorderSize(0);
+        leg2->SetLineWidth(1);
+        leg2->SetNColumns(1);
+        leg2->SetTextFont(42);
 
         if(true)//isRatio)
         {
@@ -1478,7 +1485,7 @@ void HnuPlots::plot1D()
 
             TH1 **tgs = new TH1*[systematics.size()];
             int itg = 0;
-            const int ebColors[] = {kRed - 9, kBlue - 1}, NEBCOLORS = sizeof(ebColors) / sizeof(int);
+            const int ebColors[] = {kRed - 9, kBlue}, NEBCOLORS = sizeof(ebColors) / sizeof(int);
             //const int ebStyles[] = {3001, 3001}, NEBSTYLES = sizeof(ebColors) / sizeof(int);
             double chi2 = 0.0;
             double chi2_2 = 0.0;
@@ -1525,6 +1532,8 @@ void HnuPlots::plot1D()
                 //tgs[itg]->SetFillStyle(ebStyles[itg % NEBSTYLES]);
                 tgs[itg]->SetMarkerStyle(0);
                 tgs[itg]->Draw("E2 L same");
+                if     (itg == 0) leg2->AddEntry(tgs[itg], "All Syst. Uncert.");
+                else if(itg == 1) leg2->AddEntry(tgs[itg], "Reco/ID Uncert.");
                 itg++;
             }
             printf("Chi^2 = %f\n", chi2);
@@ -1533,12 +1542,14 @@ void HnuPlots::plot1D()
             if(systematics.size())
             {
                 //TLine *sysStartLine = new TLine(600.0, std::max(-0.9, std::min(0.0, 1.0 - 1.2 * tgs[0]->GetBinError(tgs[0]->FindBin(3500)))), 600.0, 600.0);
-                TLine *sysStartLine = 0;
-                if(isRatio) sysStartLine = new TLine(0.6, d2ymin, 0.6, d2ymax);
-                else        sysStartLine = new TLine(0.6, -3, 0.6, 3);
-                sysStartLine->SetLineColor(kBlack);
-                sysStartLine->SetLineStyle(2);
-                sysStartLine->Draw();
+                //TLine *sysStartLine = 0;
+                //if(isRatio) sysStartLine = new TLine(0.6, d2ymin, 0.6, d2ymax);
+                //else        sysStartLine = new TLine(0.6, -3, 0.6, 3);
+                //sysStartLine->SetLineColor(kBlack);
+                //sysStartLine->SetLineStyle(2);
+                //sysStartLine->Draw();
+                
+                leg2->Draw();
             }
 
 
@@ -3455,26 +3466,26 @@ void plot2012(int mode = 0, int cutlevel = 5, std::string plot = "mWR", int rebi
     if(mode <= 1)
     {
         //Nominal signal points -- Sean comment these out before you plot more signal
-        //if(rebin > 0)
-        //{
-        //    vsig.push_back(HnuPlots::FileStruct("#lower[0.31]{#splitline{M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV}{M_{N} = M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}}/2}}",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-        //}
-        //else
-        //{
-        //    vsig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-        //    vsig2.push_back(HnuPlots::FileStruct("#lower[0.31]{#splitline{M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV unbinned}{M_{N} = M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}}/2}}",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul, true));
-        //}
-        //sig.push_back(vsig);
-        //if(rebin <= 0) sig.push_back(vsig2);
+        if(rebin > 0)
+        {
+            vsig.push_back(HnuPlots::FileStruct("#lower[0.31]{#splitline{M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV}{M_{N} = M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}}/2}}",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+        }
+        else
+        {
+            vsig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+            vsig2.push_back(HnuPlots::FileStruct("#lower[0.31]{#splitline{M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV unbinned}{M_{N} = M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}}/2}}",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul, true));
+        }
+        sig.push_back(vsig);
+        if(rebin <= 0) sig.push_back(vsig2);
         
         //sample gen signal point -- Sean add individual signal points here
         //Format  (modify stared fields)     label*           filepath*                                                                                          tupple folder / plotname  lumi  xsec*   kfactor/Nevts*  the rest is a magic incantation that should not be changed
         //vsig.push_back( HnuPlots::FileStruct("test signal"  ,  "/home/ugrad/pastika/cms/HeavyNu/CMSSW_5_3_8/src/HeavyNu/AnalysisModules/HeavyNu_accept_1000_25.root", "hNuGen2012/" + plot, lumi, 0.002286, 1.140/1000, "", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
         //vsig2.push_back(HnuPlots::FileStruct("test signal 2",  "/home/ugrad/pastika/cms/HeavyNu/CMSSW_5_3_8/src/HeavyNu/AnalysisModules/HeavyNu_accept_1000_250.root", "hNuGen2012/" + plot, lumi, 0.002286, 1.140/1000, "", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-        vsig.push_back( HnuPlots::FileStruct("M(WR)=2100 M(N)=100"  ,  "/home/ugrad/pastika/cms/HeavyNu/CMSSW_5_3_6_patch1/src/HeavyNu/Tools/analyzed_WR_2100_to_LNu_Nu_1200_10kevts.root", "hNuGen/" + plot, lumi, 16.93, 1.199/10000, "", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+        //vsig.push_back( HnuPlots::FileStruct("M(WR)=2100 M(N)=100"  ,  "/home/ugrad/pastika/cms/HeavyNu/CMSSW_5_3_6_patch1/src/HeavyNu/Tools/analyzed_WR_2100_to_LNu_Nu_1200_10kevts.root", "hNuGen/" + plot, lumi, 16.93, 1.199/10000, "", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
         
         //Then add the individual signal points to the list of signal points
-        sig.push_back(vsig);
+        //sig.push_back(vsig);
         //sig.push_back(vsig2);
     }
     else if(!hft && mode == 2)
@@ -3562,10 +3573,10 @@ void plot2012(int mode = 0, int cutlevel = 5, std::string plot = "mWR", int rebi
     hps.autoSetHistogramAxisTitle(mode);
     hps.setRebin(rebin);
     hps.setLog(log);
-    hps.setCompPlot(false);
+    hps.setCompPlot(true);
     hps.setXRange(xmin, xmax);
     hps.plot();
-    hps.integrals(600, 60000);
+    hps.integrals(0.0, 60000);
 }
 
 void plotRatios(int mode = 0, int cutlevel = 5, std::string plot = "mWR", int rebin = 5)
