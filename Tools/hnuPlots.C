@@ -167,6 +167,7 @@ public:
     void plotRatios();
     void scaleByShape(double llow, double lhigh, int npar = 2);
     void scaleSigByRoo();
+    void scaleSigByRoot();
     void cutFlow();
     void sigEff();
     void integrals(double min, double max, double* passnum = NULL, double* err = NULL);
@@ -238,6 +239,7 @@ double HnuPlots::fitfunction::operator()(double * x, double * par)
     int n = 0;
     for(std::vector<HnuPlots::HistStruct>::const_iterator ihbg = bghs.begin(); ihbg != bghs.end(); ++ihbg)
     {
+        //std::cout << "HELLO THERE!! " << n << "\t" << ((n < npar)?par[n]:1.0) << "\t" << ihbg->hist->GetBinContent(ihbg->hist->FindBin(x[0])) << std::endl;
         retval += ((n < npar)?par[n]:1.0) * ihbg->hist->GetBinContent(ihbg->hist->FindBin(x[0]));
         n++;
     }
@@ -775,6 +777,8 @@ TH1* HnuPlots::histFromTuple(std::string histValues, double nb, std::vector<std:
 
 double HnuPlots::getTupleVar(std::string var, const HeavyNuTree::HNuSlopeFitInfo& tpls)
 {
+    using namespace std; 
+    
     double pL1 = tpls.l1pt * cosh(tpls.l1eta);
     double pL2 = tpls.l2pt * cosh(tpls.l2eta);
     double pLmin = std::min(pL1, pL2);
@@ -1278,7 +1282,17 @@ void HnuPlots::plot1D()
     fixOverlay();
     for(std::vector<HnuPlots::HistStruct >::const_iterator isig = sighists.begin(); isig != sighists.end(); isig++)
     {
-        if(!isig->smooth_hist) isig->hist->Draw("hist same");
+        if(!isig->smooth_hist)
+        {
+            TH1 *sig = (TH1*)isig->hist->Clone();
+            for(vector<HnuPlots::HistStruct>::const_iterator ihbg = bghists.begin(); ihbg != bghists.end(); ++ihbg)
+            {
+                sig->Add(ihbg->hist);
+            }
+            sig->Draw("hist same");
+            isig->hist->SetLineStyle(kDashed);
+            isig->hist->Draw("hist same");
+        }
         else
         {
             TGraph *ttg = new TGraph();
@@ -2335,6 +2349,7 @@ void HnuPlots::scaleSigByRoo()
         bgint += ihbg->hist->Integral(0, ihbg->hist->GetNbinsX() + 1);
     }
     RooRealVar bg_scale("bg", "bg", bgint);
+    std::cout << bgint << std::endl;
 
     RooAddPdf  mWR_pdf("mWR_fit",  "mWR_fit",  RooArgList(kpdf_mWR_sig,  kpdf_mWR_bg),  RooArgList(sig_scale, bg_scale));
     RooAddPdf  mLL_pdf("mLL_fit",  "mLL_fit",  RooArgList(kpdf_mLL_sig,  kpdf_mLL_bg),  RooArgList(sig_scale, bg_scale));
@@ -2343,8 +2358,8 @@ void HnuPlots::scaleSigByRoo()
     RooAddPdf mNu1_pdf("mNu1_fit", "mNu1_fit", RooArgList(kpdf_mNu1_sig, kpdf_mNu1_bg), RooArgList(sig_scale, bg_scale));
     RooAddPdf mNu2_pdf("mNu2_fit", "mNu2_fit", RooArgList(kpdf_mNu2_sig, kpdf_mNu2_bg), RooArgList(sig_scale, bg_scale));
 
-    RooProdPdf fitpdf("fit", "fit", RooArgList(mWR_pdf, mLL_pdf, mJJ_pdf, ptL1_pdf, mNu1_pdf, mNu2_pdf));
-    //RooProdPdf fitpdf("fit", "fit", RooArgList(mNu1_pdf));
+    //RooProdPdf fitpdf("fit", "fit", RooArgList(mWR_pdf, mLL_pdf, mJJ_pdf, ptL1_pdf, mNu1_pdf, mNu2_pdf));
+    RooProdPdf fitpdf("fit", "fit", RooArgList(mWR_pdf));
 
     RooFitResult *fr = fitpdf.fitTo(*rd_Data, RooFit::Save());
 
@@ -2354,14 +2369,47 @@ void HnuPlots::scaleSigByRoo()
     c->cd();
     RooPlot *frame = mWR.frame();
     rd_Data->plotOn(frame);
-    fitpdf.plotOn(frame, RooFit::Components("kbg_mWR,ksig_mWR"));
-    fitpdf.plotOn(frame, RooFit::Components("kbg_mWR"), RooFit::LineStyle(kDashed));
-    fitpdf.plotOn(frame, RooFit::Components("ksig_mWR"), RooFit::LineStyle(kDashDotted));
+    fitpdf.plotOn(frame);
+    //fitpdf.plotOn(frame, RooFit::Components("kbg_mWR"), RooFit::LineStyle(kDashed));
+    //fitpdf.plotOn(frame, RooFit::Components("ksig_mWR"), RooFit::LineStyle(kDashDotted));
     frame->Draw();
     c->SetLogy();
     c->Print("frame.png");
 
-    sighists.front().hist->Scale(sig_scale.getVal() / sighists.front().hist->Integral(0, sighists.front().hist->GetNbinsX() + 1));
+    double scalef = sig_scale.getVal() / sighists.front().hist->Integral(0, sighists.front().hist->GetNbinsX() + 1);
+    std::cout << "Normalization factor - " << sighists.front().label << " : " << scalef << std::endl;
+    sighists.front().hist->Scale(scalef);
+}
+
+void HnuPlots::scaleSigByRoot()
+{
+    TH1 *hbg = (TH1*)bghists[0].hist->Clone();
+    std::vector<HnuPlots::HistStruct>::const_iterator ihbg = bghists.begin();
+    for(++ihbg; ihbg != bghists.end(); ihbg++)
+    {
+        hbg->Add(ihbg->hist);
+    }
+    
+    HnuPlots::fitfunction fit;
+    fit.npar = 1;
+    fit.bghs = sighists;
+
+    TF1 *ff = new TF1("fit", fit , 0, 4, 1);
+    
+    double x = 2.0, par = 1.0;
+    std::cout << ff->EvalPar(&x, &par) << std::endl;
+    par = 2.0;
+    std::cout << ff->EvalPar(&x, &par) << std::endl;
+
+    TH1 * hd = (TH1*)datahist.hist->Clone("histtofit");
+    hd->Add(hbg, -1);
+    hd->Fit(ff, "LNQM", "", 0, 4);
+
+    for(int i = 0; i < fit.npar; i++)
+    {
+        std::cout << "Normalization factor - " << sighists[i].label << " : " << ff->GetParameter(i) << " +/-" << ff->GetParError(i) << std::endl;
+        sighists[i].hist->Scale(ff->GetParameter(i));
+    }
 }
 
 void HnuPlots::cutFlow()
@@ -3568,7 +3616,7 @@ void plot2012(int mode = 0, int cutlevel = 5, std::string plot = "mWR", int rebi
         //}
         //else
         //{
-            vsig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+        //    vsig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
         //    vsig2.push_back(HnuPlots::FileStruct("#lower[0.31]{#splitline{M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV unbinned}{M_{N} = M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}}/2}}",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul, true));
         //}
         //sig.push_back(vsig);
@@ -3576,7 +3624,7 @@ void plot2012(int mode = 0, int cutlevel = 5, std::string plot = "mWR", int rebi
         
         //sample gen signal point -- Sean add individual signal points here
         //Format  (modify stared fields)     label*           filepath*                                                                                          tupple folder / plotname  lumi  xsec*   kfactor/Nevts*  the rest is a magic incantation that should not be changed
-        //vsig.push_back( HnuPlots::FileStruct("test signal"  ,  "/home/ugrad/pastika/cms/HeavyNu/CMSSW_5_3_8/src/HeavyNu/AnalysisModules/HeavyNu_accept_1000_250.root", "hNuGen2012/" + plot, lumi, 0.002286, 1.140/1000, "", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+        vsig.push_back( HnuPlots::FileStruct("test signal"  ,  "/home/ugrad/pastika/cms/HeavyNu/CMSSW_5_3_8/src/HeavyNu/AnalysisModules/HeavyNu_accept_1000_250.root", "hNuGen2012/" + plot, lumi, 0.002286, 1.140/1000, "", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
         //vsig2.push_back(HnuPlots::FileStruct("test signal 2",  "/home/ugrad/pastika/cms/HeavyNu/CMSSW_5_3_8/src/HeavyNu/AnalysisModules/HeavyNu_accept_1000_250.root", "hNuGen2012/" + plot, lumi, 0.002286, 1.140/1000, "", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
         
         //Then add the individual signal points to the list of signal points
@@ -3669,7 +3717,8 @@ void plot2012(int mode = 0, int cutlevel = 5, std::string plot = "mWR", int rebi
     hps.setLog(log);
     hps.setCompPlot(true);
     hps.setXRange(xmin, xmax);
-    hps.scaleSigByRoo();
+    //hps.scaleSigByRoo();
+    hps.scaleSigByRoot();
     hps.plot();
     hps.integrals(600, 60000);
 }
@@ -5271,6 +5320,6 @@ void plotall()
 
 int main()
 {
-    plot2012(1, 5, "ptL1;mWR>1.8;mWR<2.2");
+    plot2012(1, 5, "mWR");
     //plotall();
 }
