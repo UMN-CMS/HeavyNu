@@ -1072,7 +1072,7 @@ void HnuPlots::plot1D()
             if(rebin >= 0) sprintf(temp, "Events / %.0f GeV", datahist.hist->GetBinWidth(1));
             else 
             {
-                sprintf(temp, "Events / 200 GeV");
+                sprintf(temp, "#LTEvents / 200 GeV#GT");
             }
             yaxislabel = temp;
         }
@@ -1085,7 +1085,7 @@ void HnuPlots::plot1D()
             }
             else 
             {
-                sprintf(temp, "Events / 0.2 TeV");
+                sprintf(temp, "#LTEvents / 200 TeV#GT");
             }
             yaxislabel = temp;
             isGeV = false;
@@ -1156,7 +1156,8 @@ void HnuPlots::plot1D()
         if(rebin >= 0) integral = ihbg->hist->Integral(0, ihbg->hist->GetNbinsX() + 1);
         else integral = ihbg->hist->Integral(1, ihbg->hist->GetNbinsX(), "width")/(isGeV?200:0.2);
         char hllabel[128];
-        sprintf(hllabel, "%s (%.0f)", ihbg->label.c_str(), floor(integral + 0.5));
+        if(integral > 3) sprintf(hllabel, "%s (%.0f)", ihbg->label.c_str(), floor(integral + 0.5));
+        else             sprintf(hllabel, "%s (%.2f)", ihbg->label.c_str(), integral);
         leg->AddEntry(ihbg->hist, hllabel, "F");
     }
     //double sigMaxMin = datahist.hist->GetMaximum();
@@ -1180,15 +1181,15 @@ void HnuPlots::plot1D()
     TH1 *dummy = new TH1F("dummy", "dummy", 1000, datahist.hist->GetBinLowEdge(1), datahist.hist->GetBinLowEdge(datahist.hist->GetNbinsX()) + datahist.hist->GetBinWidth(datahist.hist->GetNbinsX()));
     if(xmin != xmax) dummy->GetXaxis()->SetRangeUser(xmin, xmax);
     //dummy->GetXaxis()->SetTitle(xaxislabel.c_str());
+    if(ymin < ymax) dummy->GetYaxis()->SetRangeUser(ymin, ymax);
     if(islog)
     {
         if(ymin == ymax) dummy->GetYaxis()->SetRangeUser(std::max(0.0001, 0.2 * std::min(hbg->GetMaximum(), 0.3 * datahist.hist->GetMinimum(0.0001))), std::max(hbg->GetMaximum(), datahist.hist->GetMaximum())*4);
-        else             dummy->GetYaxis()->SetRangeUser(ymin, ymax);
         gPad->SetLogy(1);
     }
     else
     {
-        dummy->GetYaxis()->SetRangeUser(0.001, std::max(hbg->GetMaximum(), datahist.hist->GetMaximum())*1.2);
+        if(ymin == ymax) dummy->GetYaxis()->SetRangeUser(0.001, std::max(hbg->GetMaximum(), datahist.hist->GetMaximum())*1.2);
     }
     dummy->GetYaxis()->SetTitle(yaxislabel.c_str());
     dummy->GetYaxis()->SetTitleOffset(1.1*1.05 / (fontScale));
@@ -1287,6 +1288,7 @@ void HnuPlots::plot1D()
     mark.SetTextSize(0.04 * 1.1 * 8 / 6.5 * fontScale);
     mark.SetTextFont(42);
     mark.SetNDC(true);
+    //mark.DrawLatex(0.53, 0.52, "1.8 < M_{eejj} < 2.2 TeV");
     //mark.DrawLatex(0.17, 0.95, "CMS");
     //mark.DrawLatex(0.68, 0.95, lumistamp);
     mark.SetTextAlign(31);
@@ -3165,16 +3167,16 @@ void setBgandData(int mode, HnuPlots::FileStruct& data, std::vector<std::vector<
             bgTT.push_back(HnuPlots::FileStruct(   "t#bar{t}", mc_WZ,    "hNuEMu/"     + cutlevels[cutlevel] + "/" + plot, lumi2012ee, xsecWZ,    - k_ee_ddtop / NWZ,                              "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
             bgTT.push_back(HnuPlots::FileStruct("EWK WW 2j",    "/local/cms/user/pastika/heavyNuAnalysis_2012/WWqq/WpWpqq_8TeV.root",    "hNuEMu/"    + cutlevels[cutlevel] + "/" + plot, lumi2012ee, 0.24820,     -k_mm_ddtop / 99985,                                      "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
             bgTT.push_back(HnuPlots::FileStruct("EWK WW 2j",    "/local/cms/user/pastika/heavyNuAnalysis_2012/WWqq/WmWmqq_8TeV.root",    "hNuEMu/"    + cutlevels[cutlevel] + "/" + plot, lumi2012ee, 0.08888 ,     -k_mm_ddtop / 96392,                                      "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
-            //bgTT.push_back(HnuPlots::FileStruct(   "t#bar{t}", mc_WW,    "hNuEMu/"     + cutlevels[cutlevel] + "/" + plot, lumi2012ee, xsecWW,    - k_ee_ddtop / NWW,                              "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
-            //bgOther.push_back(HnuPlots::FileStruct("Other",    mc_tW,    "hNuMu40/"    + cutlevels[cutlevel] + "/" + plot, lumi2012ee, xsectW,     0.5 / NtW,                                      "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
-            //bgOther.push_back(HnuPlots::FileStruct("Other",    mc_tbarW, "hNuMu40/"    + cutlevels[cutlevel] + "/" + plot, lumi2012ee, xsectbarW,  0.5 / NtbarW,                                   "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
+            bgTT.push_back(HnuPlots::FileStruct(   "t#bar{t}", mc_WW,    "hNuEMu/"     + cutlevels[cutlevel] + "/" + plot, lumi2012ee, xsecWW,    - k_ee_ddtop / NWW,                              "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
+            bgOther.push_back(HnuPlots::FileStruct("Other",    mc_tW,    "hNuMu40/"    + cutlevels[cutlevel] + "/" + plot, lumi2012ee, xsectW,     0.5 / NtW,                                      "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
+            bgOther.push_back(HnuPlots::FileStruct("Other",    mc_tbarW, "hNuMu40/"    + cutlevels[cutlevel] + "/" + plot, lumi2012ee, xsectbarW,  0.5 / NtbarW,                                   "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
             bgOther.push_back(HnuPlots::FileStruct("Other",    mc_tW,    "hNuE/"       + cutlevels[cutlevel] + "/" + plot, lumi2012ee, xsectW,    1.0 / NtW,                                       "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
             bgOther.push_back(HnuPlots::FileStruct("Other",    mc_tbarW, "hNuE/"       + cutlevels[cutlevel] + "/" + plot, lumi2012ee, xsectbarW, 1.0 / NtbarW,                                    "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
             bgOther.push_back(HnuPlots::FileStruct("Other",    mc_ZZ,    "hNuE/"       + cutlevels[cutlevel] + "/" + plot, lumi2012ee, xsecZZ,    1.0 / NZZ,                                       "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
             bgOther.push_back(HnuPlots::FileStruct("Other",    mc_WZ,    "hNuE/"       + cutlevels[cutlevel] + "/" + plot, lumi2012ee, xsecWZ,    1.0 / NWZ,                                       "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
             bgOther.push_back(HnuPlots::FileStruct("Other",    mc_WW,    "hNuE/"       + cutlevels[cutlevel] + "/" + plot, lumi2012ee, xsecWW,    1.0 / NWW,                                       "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
 
-//            bgZ1J.push_back(HnuPlots::FileStruct("EWK WW 2j",    "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_CWR/WW2Jets_EW6_TuneZ2star_8TeV-phantom-tauola.root",    "hNuE/"    + cutlevels[cutlevel] + "/" + plot, lumi2012ee, 0.0993,     1.0 / 496500,                                      "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
+            bgZ1J.push_back(HnuPlots::FileStruct("EWK WW 2j",    "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_CWR/WW2Jets_EW6_TuneZ2star_8TeV-phantom-tauola.root",    "hNuE/"    + cutlevels[cutlevel] + "/" + plot, lumi2012ee, 0.0993,     1.0 / 496500,                                      "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
             bgOther.push_back(HnuPlots::FileStruct("EWK WW 2j",    "/local/cms/user/pastika/heavyNuAnalysis_2012/WWqq/WpWpqq_8TeV.root",    "hNuE/"    + cutlevels[cutlevel] + "/" + plot, lumi2012ee, 0.24820,     1.0 / 99985,                                      "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
             bgOther.push_back(HnuPlots::FileStruct("EWK WW 2j",    "/local/cms/user/pastika/heavyNuAnalysis_2012/WWqq/WmWmqq_8TeV.root",    "hNuE/"    + cutlevels[cutlevel] + "/" + plot, lumi2012ee, 0.08888 ,     1.0 / 96392,                                      "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
 
@@ -3466,17 +3468,17 @@ void plot2012(int mode = 0, int cutlevel = 5, std::string plot = "mWR", int rebi
     if(mode <= 1)
     {
         //Nominal signal points -- Sean comment these out before you plot more signal
-        if(rebin > 0)
-        {
-            vsig.push_back(HnuPlots::FileStruct("#lower[0.31]{#splitline{M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV}{M_{N} = M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}}/2}}",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-        }
-        else
-        {
-            vsig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-            vsig2.push_back(HnuPlots::FileStruct("#lower[0.31]{#splitline{M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV unbinned}{M_{N} = M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}}/2}}",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul, true));
-        }
-        sig.push_back(vsig);
-        if(rebin <= 0) sig.push_back(vsig2);
+        //if(rebin > 0)
+        //{
+        //    vsig.push_back(HnuPlots::FileStruct("#lower[0.31]{#splitline{M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV}{M_{N} = M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}}/2}}",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+        //}
+        //else
+        //{
+        //    vsig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+        //    vsig2.push_back(HnuPlots::FileStruct("#lower[0.31]{#splitline{M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV unbinned}{M_{N} = M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}}/2}}",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul, true));
+        //}
+        //sig.push_back(vsig);
+        //if(rebin <= 0) sig.push_back(vsig2);
         
         //sample gen signal point -- Sean add individual signal points here
         //Format  (modify stared fields)     label*           filepath*                                                                                          tupple folder / plotname  lumi  xsec*   kfactor/Nevts*  the rest is a magic incantation that should not be changed
@@ -3485,7 +3487,8 @@ void plot2012(int mode = 0, int cutlevel = 5, std::string plot = "mWR", int rebi
         //vsig.push_back( HnuPlots::FileStruct("M(WR)=2100 M(N)=100"  ,  "/home/ugrad/pastika/cms/HeavyNu/CMSSW_5_3_6_patch1/src/HeavyNu/Tools/analyzed_WR_2100_to_LNu_Nu_1200_10kevts.root", "hNuGen/" + plot, lumi, 16.93, 1.199/10000, "", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
         
         //Then add the individual signal points to the list of signal points
-        //sig.push_back(vsig);
+        vsig.push_back(HnuPlots::FileStruct("#lower[0.31]{#splitline{M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.0 TeV}{M_{N} = 1.67 TeV}}",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MWR-2000_MNu-1666_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.0026, 1.214, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+        sig.push_back(vsig);
         //sig.push_back(vsig2);
     }
     else if(!hft && mode == 2)
