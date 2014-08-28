@@ -149,9 +149,9 @@ public:
     void plotQCDFit();
     void plotNorm(double lower, double upper, bool flip = false);
     void plotRatios();
-    void scaleByShape(double llow, double lhigh, int npar = 2);
+    double scaleByShape(double llow, double lhigh, int npar = 2);
     void cutFlow();
-    void chi2();
+    double chi2();
     void sigEff();
     void integrals(double min, double max, double* passnum = NULL, double* err = NULL);
     void sigRMS();
@@ -642,13 +642,13 @@ TH1* HnuPlots::histFromTuple(std::string histValues, double nb, std::vector<std:
             if ( big_hist )
             { // all variables into one big histogram
                 // std::cout << "Trying to make a summary histogram" << std::endl ; 
-                int nb = 0 ;
+                int nb2 = 0 ;
                 for (unsigned int i = 0; i < vlim.size(); i++)
                 {
                     // std::cout << "vlim " << i+1 << " of " << vlim.size() << " with details " << vlim[i].nb << " " << vlim[i].thll << " " << vlim[i].thul << std::endl ;
-                    nb += vlim[i].nb ;
+                    nb2 += vlim[i].nb ;
                 }
-                hist = new TH1D(hname, htitle, nb, 0., nb) ;
+                hist = new TH1D(hname, htitle, nb2, 0., nb2) ;
             }
             else
             {
@@ -667,7 +667,6 @@ TH1* HnuPlots::histFromTuple(std::string histValues, double nb, std::vector<std:
     }
     hist->Sumw2();
 
-    int ctr = 0 ;
     for(std::vector<std::pair<HeavyNuTree::HNuSlopeFitInfo, double> >::const_iterator iT = bgtvec.begin(); iT != bgtvec.end(); ++iT)
     {
         std::vector<double> values;
@@ -731,12 +730,12 @@ TH1* HnuPlots::histFromTuple(std::string histValues, double nb, std::vector<std:
 
         // prepair appropriate variables for fill
         int mWRpos = -1 ;
-        int ctr = 0 ;
+        int ctr2 = 0 ;
         for(std::vector<std::string>::const_iterator ihlabel = histQs.begin(); ihlabel != histQs.end(); ++ihlabel)
         {
-            if ((*ihlabel).compare("mWR") == 0) mWRpos = ctr ;
+            if ((*ihlabel).compare("mWR") == 0) mWRpos = ctr2 ;
             values.push_back(getTupleVar(*ihlabel, iT->first));
-            ctr++ ;
+            ctr2++ ;
         }
 
         // fill histograms with prepaired values and proper weights
@@ -757,7 +756,7 @@ TH1* HnuPlots::histFromTuple(std::string histValues, double nb, std::vector<std:
             {
                 for (unsigned int i = 0; i < values.size(); i++)
                 {
-                    if ( i != mWRpos && !passMWR ) continue ;
+                    if ( i != (unsigned int)mWRpos && !passMWR ) continue ;
                     int offset = 0 ;
                     for (unsigned int j = 0; j < i; j++)
                     {
@@ -1539,7 +1538,7 @@ void HnuPlots::plot1D()
             int itg = 0;
             const int ebColors[] = {kRed - 9, kBlue - 1}, NEBCOLORS = sizeof(ebColors) / sizeof(int);
             //const int ebStyles[] = {3001, 3001}, NEBSTYLES = sizeof(ebColors) / sizeof(int);
-            double chi2 = 0.0;
+            double chi2_1 = 0.0;
             double chi2_2 = 0.0;
             for(std::vector< std::vector<float> >::const_iterator sit = systematics.begin(); sit != systematics.end(); ++sit)
             {
@@ -1575,7 +1574,7 @@ void HnuPlots::plot1D()
                         }
                         double syst_error = nbg * fabs(sit->at(i - 1));
                         double stat_error = datahist.hist->GetBinError(i);
-                        chi2 += pow(nbg - datahist.hist->GetBinContent(i), 2) / (syst_error * syst_error + stat_error * stat_error);
+                        chi2_1 += pow(nbg - datahist.hist->GetBinContent(i), 2) / (syst_error * syst_error + stat_error * stat_error);
                         chi2_2 += pow(nbg - datahist.hist->GetBinContent(i), 2) / (stat_error * stat_error);
                         //std::cout << nbg << "\t" <<
                     }
@@ -1586,7 +1585,7 @@ void HnuPlots::plot1D()
                 tgs[itg]->Draw("E2 L same");
                 itg++;
             }
-            printf("Chi^2 = %f\n", chi2);
+            printf("Chi^2 = %f\n", chi2_1);
             printf("Chi^2 (stat only) = %f\n", chi2_2);
 
             if(systematics.size())
@@ -2299,7 +2298,7 @@ void HnuPlots::plotRatios()
     }
 }
 
-void HnuPlots::scaleByShape(double llow, double lhigh, int npar)
+double HnuPlots::scaleByShape(double llow, double lhigh, int npar)
 {
     HnuPlots::fitfunction fit;
     fit.npar = npar;
@@ -2317,8 +2316,8 @@ void HnuPlots::scaleByShape(double llow, double lhigh, int npar)
         bghists[i].hist->Scale(ff->GetParameter(i));
         // std::cout << "I just scaled my histogram" << std::endl ; 
     }
-
-    plot();
+    
+    return ff->GetParameter(0);
 }
 
 void HnuPlots::cutFlow()
@@ -2358,7 +2357,7 @@ void HnuPlots::cutFlow()
     }
 }
 
-void HnuPlots::chi2()
+double HnuPlots::chi2()
 {
     TH1 * bgh = (TH1*)bghists.front().hist->Clone();
     for(std::vector<HnuPlots::HistStruct >::const_iterator ihbg = bghists.begin() + 1; ihbg != bghists.end(); ++ihbg)
@@ -2366,13 +2365,17 @@ void HnuPlots::chi2()
         bgh->Add(ihbg->hist);
     }
     
-    double chi2 = 0.0;
+    double chi2val = 0.0;
     for(int i = 1; i <= datahist.hist->GetNbinsX(); ++i)
     {
-        chi2 += pow(datahist.hist->GetBinContent(i) - bgh->GetBinContent(i), 2)/(pow(datahist.hist->GetBinError(i), 2) + pow(bgh->GetBinError(i), 2));
+        double err1 = datahist.hist->GetBinError(i);
+        double err2 = bgh->GetBinError(i);
+        if(err1 > 0 && err2 > 0) chi2val += pow(datahist.hist->GetBinContent(i) - bgh->GetBinContent(i), 2)/(pow(err1, 2) + pow(err2, 2));
     }
     
-    std::cout << "The chi^2 is: " << chi2 << std::endl;
+    std::cout << "The chi^2 is: " << chi2val << std::endl;
+    
+    return chi2val;
 }
 
 void HnuPlots::sigEff()
@@ -3473,9 +3476,12 @@ void setBgandData(int mode, HnuPlots::FileStruct& data, std::vector<std::vector<
     data.file = fdata;
 }
 
-void setBgDataAndSignal(int mode, HnuPlots::FileStruct& data, std::vector<std::vector<HnuPlots::FileStruct> >& bg, double& lumi, int cutlevel = 5, std::string plot = "mWR", bool lt = false, bool hft = false, bool isZJ = false)
+void setBgDataAndSignal(int mode, HnuPlots::FileStruct& data, std::vector<std::vector<HnuPlots::FileStruct> >& bg, double& lumi, int cutlevel = 5, std::string plot = "mWR", double sigScale = 1.0)
 {
     char fdata[256];
+    
+    const bool lt = true;
+    const bool hft = true;
 
     std::vector<HnuPlots::FileStruct> bgTT, bgZJ, bgZ1J, bgZ2J, bgZ3J, bgZ4J, bgOther, wrSig;
 
@@ -3513,8 +3519,6 @@ void setBgDataAndSignal(int mode, HnuPlots::FileStruct& data, std::vector<std::v
     ul.j2eta    = 10.0;
     ul.j2phi    = 10.0;
 
-    double kf = 1.0;
-
     bgZJ.push_back(HnuPlots::FileStruct(   "DY#lower[-0.20]{+}Jets",   mc_Z0J,   "hNuE/"       + cutlevels[cutlevel] + "/" + plot, lumi2012ee, xsecZ0J,   k_ee_Zscale * k_ee_NNLOZ / NZ0J,                 "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
     bgZJ.push_back(HnuPlots::FileStruct(   "Z+Jets",   mc_Z1J,   "hNuE/"       + cutlevels[cutlevel] + "/" + plot, lumi2012ee, xsecZ1J,   k_ee_Zscale * k_ee_NNLOZ / NZ1J,                 "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
     bgZJ.push_back(HnuPlots::FileStruct(   "Z+Jets",   mc_Z2J,   "hNuE/"       + cutlevels[cutlevel] + "/" + plot, lumi2012ee, xsecZ2J,   k_ee_Zscale * k_ee_NNLOZ / NZ2J,                 "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
@@ -3543,87 +3547,76 @@ void setBgDataAndSignal(int mode, HnuPlots::FileStruct& data, std::vector<std::v
     switch (mode)
     { // mode == neutrino mass 
         case 100:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_100_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01693, 1.199, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_100_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01693, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
             break;
         case 200:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_200_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01619, 1.199, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_200_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01619, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
             break;
         case 300:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_300_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01556, 1.199, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_300_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01556, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
             break;
         case 400:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_400_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01476, 1.199, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_400_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01476, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
             break;
         case 500:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_500_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01404, 1.199, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_500_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01404, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
             break;
         case 600:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_600_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01339, 1.199, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_600_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01339, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
             break;
         case 700:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_700_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01260, 1.199, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_700_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01260, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
             break;
         case 800:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_800_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01178, 1.199, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_800_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01178, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
             break;
         case 900:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_900_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01073, 1.199, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_900_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01073, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
             break;
         case 1000:
-            // wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_100_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.009804, 1.199, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{N_{#lower[-0.2]{e}}}} = 1000 GeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1000_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.009804, (1.199 / 10000.0), "", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1000_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.009804, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
             break;
         case 1100:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1100_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.008757, 1.199, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1100_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.008757, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
             break;
         case 1200:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1200_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.007757, 1.199, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1200_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.007757, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
             break;
         case 1300:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1300_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.006618, 1.199, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1300_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.006618, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
             break;
         case 1400:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1400_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.005491, 1.199, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1400_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.005491, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
             break;
         case 1500:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1500_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.004321, 1.199, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1500_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.004321, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
             break;
         case 1600:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1600_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.003294, 1.199, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1600_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.003294, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
             break;
         case 1700:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1700_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.002285, 1.199, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1700_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.002285, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
             break;
         case 1800:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1800_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.001379, 1.199, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1800_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.001379, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
             break;
         case 1900:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1900_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.000691, 1.199, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1900_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.000691, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
             break;
         case 2000:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_2000_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.000224, 1.199, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_2000_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.000224, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
             break;
         default:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2100_MNu-1050_TuneZ2star_8TeV-pythia6-tauola.root", "hNuE/" + cutlevels[cutlevel] + "/" + plot, lumi2012ee, 0.009319, 1.199, "hNuE/mc_type", 0.0, 0.0, true, 2, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2100_MNu-1050_TuneZ2star_8TeV-pythia6-tauola.root", "hNuE/" + cutlevels[cutlevel] + "/" + plot, lumi2012ee, 0.009319, 1.199 * sigScale, "hNuE/mc_type", 0.0, 0.0, true, 2, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
             break;
     }
 
     // wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", "hNuE/" + cutlevels[cutlevel] + "/" + plot, lumi2012ee, 0.002286, 1.140, "hNuE/mc_type", 0.0, 0.0, true, 2, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
 
-    if(isZJ)
-    {
-        bg.push_back(wrSig) ;
-        bg.push_back(bgZJ);
-        bg.push_back(bgTT);
-        bg.push_back(bgOther);
-    }
-    else
-    {
-        bg.push_back(wrSig) ;
-        bg.push_back(bgTT);
-        bg.push_back(bgZJ);
-        bg.push_back(bgOther);
-    }
+    bg.push_back(wrSig) ;
+    bg.push_back(bgTT);
+    bg.push_back(bgZJ);
+    bg.push_back(bgOther);
 
     //data
     sprintf(fdata, "%s", data_ee.c_str());
@@ -4272,7 +4265,7 @@ void plotTTBarNorm(int cutlevel = 5, bool log = true)
     hps.scaleByShape(20.0, 6000.0, 1);
 }
 
-void plotNormSignal(int cutlevel = 5, int wrmass = 2100, int numass = 1050, std::string plotThis = "mWR_mLL_mJJ_mNuR1_mNuR2_ptL1_ptL2_ptJ1_ptJ2;mWR>1.8;mWR<2.2", bool log = true)
+std::pair<double, double> plotNormSignal(int cutlevel = 5, int wrmass = 2100, int numass = 1050, std::string plotThis = "mWR_mLL_mJJ_mNuR1_mNuR2_ptL1_ptL2_ptJ1_ptJ2;mWR>1.8;mWR<2.2", double scale = 1.0, bool plot = true)
 {
 
     using namespace std;
@@ -4286,17 +4279,11 @@ void plotNormSignal(int cutlevel = 5, int wrmass = 2100, int numass = 1050, std:
     //data
     HnuPlots::FileStruct data;
 
-    setBgDataAndSignal(numass, data, bg, lumi, cutlevel, plotThis.c_str(), true, true);
+    setBgDataAndSignal(numass, data, bg, lumi, cutlevel, plotThis.c_str());
     // setBgandData(101, data, bg, lumi, cutlevel, plot, true);
 
-    // std::cout << "bg has size: " << bg.size() 
-    // 	      << " and sig has size " << sig.size() << std::endl ;
-    // for (unsigned int i=0; i<bg.size(); i++) { 
-    //   for (unsigned int j=0; j<bg.at(i).size(); j++) { 
-    //  	std::cout << i << " " << j << " " << bg.at(i).at(j).label << std::endl ; 
-    //   }
-    // }
-
+    double chi2 = 0.0;
+    
     HnuPlots hps(data, bg, sig, lumi);
     // hps.setXAxisTitle("M_{eejj} [TeV]");
     // hps.setYAxisTitle("please auto set the axis");
@@ -4304,12 +4291,49 @@ void plotNormSignal(int cutlevel = 5, int wrmass = 2100, int numass = 1050, std:
     // hps.setRebin(-1);
     hps.setCompPlot(false);
     // hps.setXRange(0.0,20000.0);
-    hps.setLog(log);
+    hps.setLog(true);
     hps.setFormLabel("ttnorm_mm_2012_MC");
     hps.setSavePlots(false);
-    hps.scaleByShape(0.0, 500.0, 1);
-    hps.chi2();
-    // hps.plot(); 
+    if(scale == 1.0) scale = hps.scaleByShape(0.0, 500.0, 1); // if the default scale is set, then recompute the scale, otherwise don't
+    chi2 = hps.chi2();
+    if(plot) hps.plot(); 
+    
+    return std::make_pair(scale, chi2);
+}
+
+void plotAllChi2(int cutlevel = 5, int wrmass = 2100, std::string plotThis = "mWR_mNuR1_mNuR2;mWR>1.8;mWR<2.2", std::string chi2This = "mWR_mLL_mJJ_mNuR1_mNuR2_ptL1_ptL2_ptJ1_ptJ2;mWR>1.8;mWR<2.2")
+{
+    const int NUSPACE = 100;
+    
+    TH1* h = new TH1D("chi2","chi2;M_{N} [GeV];Uncorrected #chi^{2}", wrmass/NUSPACE, NUSPACE/2, wrmass + NUSPACE/2);
+    TH1* h2 = new TH1D("chi2_2","chi2;M_{N} [GeV];Uncorrected #chi^{2}", wrmass/NUSPACE, NUSPACE/2, wrmass + NUSPACE/2);
+    h2->SetLineColor(kRed);
+    h2->SetLineStyle(kDashed);
+    
+    for(int mNu = NUSPACE; mNu < wrmass; mNu += NUSPACE)
+    {
+        std::pair<double, double> scaleStep = plotNormSignal(cutlevel, wrmass, mNu, plotThis, 1.0, false); // keep scale = 1.0 to enable fitting
+        h2->SetBinContent(h2->FindBin(mNu), scaleStep.second);
+        std::pair<double, double> chi2Step  = plotNormSignal(cutlevel, wrmass, mNu, chi2This, scaleStep.first, false); // scale =/= 1.0 so fit not done, only chi2 calc
+        h->SetBinContent(h->FindBin(mNu), chi2Step.second);
+        char buf[64];
+        if(mNu%(NUSPACE*2) == 0) sprintf(buf, "%d", mNu);
+        else sprintf(buf, "");
+        h->GetXaxis()->SetBinLabel(h->FindBin(mNu),buf);
+    }
+    
+    TLegend *leg = new TLegend(0.5, 0.7, 0.8, 0.8);
+    leg->SetFillStyle(0);
+    leg->SetBorderSize(0);
+    leg->AddEntry(h, chi2This.c_str(), "L");
+    leg->AddEntry(h2, plotThis.c_str(), "L");
+    
+    setTDRStyle();
+    TCanvas *c = new TCanvas("c1","c1", 800, 800);
+    c->cd();
+    h->Draw("hist");
+    h2->Draw("same hist");
+    leg->Draw("same");
 }
 
 /*
