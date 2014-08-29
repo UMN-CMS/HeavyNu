@@ -132,10 +132,12 @@ public:
     struct Limits
     {
         double thll, thul, nb;
+        std::string lab ; 
 
         Limits(){ }
 
-        Limits(double ll, double ul, double b) : thll(ll), thul(ul), nb(b){ }
+        Limits(double ll, double ul, double b) : thll(ll), thul(ul), nb(b) { lab = "NULL" ; }
+        Limits(double ll, double ul, double b, std::string l) : thll(ll), thul(ul), nb(b), lab(l) { }
     } ;
 
     HnuPlots(){ }
@@ -518,6 +520,39 @@ TH1* HnuPlots::project(TH2* h2d, double cl, double ch, bool projx)
     return h;
 }
 
+int getTheBin(std::string label, double value) { 
+
+  // std::cout << "Inside getTheBin with label " << label << std::endl ; 
+
+    double newval = -1 ; 
+    if ( label.compare("mWR") == 0) { 
+        if ( value < 1.8 ) newval = value/0.2 ; 
+        else if ( value < 2.2 ) newval = 9.0 + (value-1.8)/0.4 ; 
+        else newval = 10.0 + (value-2.2)/1.8 ; 
+        // std::cout << "For a value of " << value << " I think the bin should be " << bin << std::endl ; 
+    } else if ( label.compare("mNuR1") == 0) { 
+        if ( value < 1400.0 ) newval = value/1400.0 ; 
+        else if ( value < 1800.0 ) newval = 1.0 + (value-1400.0)/100.0 ; 
+        else if ( value < 2000.0 ) newval = 5.0 + (value-1800.0)/200.0 ; 
+        else newval = 6.0 + (value-2000.0)/1000.0 ; 
+    } else if ( label.compare("mNuR2") == 0) { 
+        if ( value < 800.0 ) newval = value/800.0 ; 
+        else if ( value < 1600.0 ) newval = 1.0 + (value-800.0)/200.0 ; 
+        else newval = 5.0 + (value-1600.0)/1400.0 ; 
+    } else if ( label.compare("mLL") == 0) { 
+        if ( value < 500.0 ) newval = value/100.0 ; 
+        else if ( value < 700.0 ) newval = 5.0 + (value-500.0)/200.0 ; 
+        else newval = 6.0 + (value-700.0)/1300.0 ; 
+    } else if ( label.compare("mJJ") == 0) { 
+        if ( value < 1400.0 ) newval = value/200.0 ; 
+        else newval = 7.0 + (value-1400.0)/600.0 ; 
+    } else if ( label.compare("ptL1") == 0) { 
+        if ( value < 400.0 ) newval = value/100.0 ; 
+        else newval = 4.0 + (value-400.0)/600.0 ; 
+    }
+    return newval ; 
+}
+
 TH1* HnuPlots::histFromTuple(std::string histValues, double nb, std::vector<std::pair<HeavyNuTree::HNuSlopeFitInfo, double> >& bgtvec, HeavyNuTree::HNuSlopeFitInfo *ll, HeavyNuTree::HNuSlopeFitInfo *ul, bool smooth)
 {
     std::vector<std::string> histQs, histPs;
@@ -594,14 +629,32 @@ TH1* HnuPlots::histFromTuple(std::string histValues, double nb, std::vector<std:
         std::string histV = *ihlabel;
         if(nb < 0)
         {
-            if(histV.compare("mWR") == 0) vlim.push_back(Limits(0.0, 4.0, 20)); // custom rebin
+            if(histV.compare("mWR") == 0) { 
+                if ( big_hist ) vlim.push_back(Limits(0.0, 4.0, 11, "mWR")); // custom rebin
+                else            vlim.push_back(Limits(0.0, 4.0, 20)); // custom rebin
+            }
             else if(histV.compare("st") == 0) vlim.push_back(Limits(0.0, 4000.0, 100));
-            else if(histV.compare("mLL") == 0 || histV.compare("mJJ") == 0) vlim.push_back(Limits(0.0, 2000.0, 20)); // custom rebin
+            else if(histV.compare("mLL") == 0 || histV.compare("mJJ") == 0) { 
+                if ( big_hist ) { 
+                    if      ( histV.compare("mLL") == 0 ) vlim.push_back(Limits(0.0, 2000.0, 7, "mLL")); // custom rebin
+                    // if      ( histV.compare("mLL") == 0 ) vlim.push_back(Limits(0.0, 2000.0, 20, "mLL")); // custom rebin
+                    else if ( histV.compare("mJJ") == 0 ) vlim.push_back(Limits(0.0, 2000.0, 8, "mJJ")); // custom rebin
+                } else vlim.push_back(Limits(0.0, 2000.0, 20)); // custom rebin
+            }
             else if(histV.compare("mLLZoom") == 0) vlim.push_back(Limits(0.0, 2000.0, 1000));
             else if(histV.compare("mLLNorm") == 0) vlim.push_back(Limits(0.06, 0.5, 220));
-            else if(histV.compare("mNuR1") == 0 || histV.compare("mNuR2") == 0) vlim.push_back(Limits(0.0, 3000.0, 30)); // custom rebin
+            
+            else if(histV.compare("mNuR1") == 0 || histV.compare("mNuR2") == 0) { 
+                if ( big_hist ) { 
+                    if      ( histV.compare("mNuR1") == 0 ) vlim.push_back(Limits(0.0, 3000.0, 7, "mNuR1")); // custom rebin	      
+                    else if ( histV.compare("mNuR2") == 0 ) vlim.push_back(Limits(0.0, 3000.0, 6, "mNuR2")); // custom rebin	      
+                } else vlim.push_back(Limits(0.0, 3000.0, 30)); // custom rebin
+            }
             else if(histV.compare("mOuR1") == 0 || histV.compare("mOuR2") == 0) vlim.push_back(Limits(0.0, 2500.0, 125));
-            else if(histV.compare("ptL1") == 0 || histV.compare("ptL2") == 0) vlim.push_back(Limits(0.0, 1000.0, 10)); // custom rebin
+            else if(histV.compare("ptL1") == 0 || histV.compare("ptL2") == 0) { 
+                if ( big_hist && histV.compare("ptL1") == 0 ) vlim.push_back(Limits(0.0, 1000.0, 5,"ptL1")); // custom rebin
+                else vlim.push_back(Limits(0.0, 1000.0, 10)); // custom rebin
+            }
             else if(histV.compare("etaL1") == 0 || histV.compare("etaL2") == 0) vlim.push_back(Limits(-2.5, 2.5, 50));
             else if(histV.compare("phiL1") == 0 || histV.compare("phiL2") == 0) vlim.push_back(Limits(-3.1415926535, 3.1415926535, 30));
             else if(histV.compare("ptJ1") == 0 || histV.compare("ptJ2") == 0) vlim.push_back(Limits(0.0, 1000.0, 10)); // custom rebin
@@ -762,7 +815,9 @@ TH1* HnuPlots::histFromTuple(std::string histValues, double nb, std::vector<std:
                     {
                         offset += vlim[j].nb ;
                     }
-                    double newval = double(offset) + ( vlim[i].nb * values[i] / vlim[i].thul ) ;
+                    double newval = getTheBin( vlim[i].lab, values[i] ) ;
+                    if ( newval < 0 ) newval = vlim[i].nb * values[i] / vlim[i].thul ; 
+                    newval += double(offset) ; 
                     // std::cout << "Value of " << values[i] << " with offset " << offset << " and rescaling " << vlim[i].thul << " produces newval " << newval << std::endl ; 
                     hist->Fill( newval, iT->first.weight ) ;
                 }
