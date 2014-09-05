@@ -3531,7 +3531,7 @@ void setBgandData(int mode, HnuPlots::FileStruct& data, std::vector<std::vector<
     data.file = fdata;
 }
 
-void setBgDataAndSignal(int mode, HnuPlots::FileStruct& data, std::vector<std::vector<HnuPlots::FileStruct> >& bg, double& lumi, int cutlevel = 5, std::string plot = "mWR", double sigScale = 1.0)
+void setBgDataAndSignal(int mWr, int mNu, HnuPlots::FileStruct& data, std::vector<std::vector<HnuPlots::FileStruct> >& bg, double& lumi, int cutlevel = 5, std::string plot = "mWR", double sigScale = 1.0)
 {
     char fdata[256];
     
@@ -3599,72 +3599,37 @@ void setBgDataAndSignal(int mode, HnuPlots::FileStruct& data, std::vector<std::v
     bgOther.push_back(HnuPlots::FileStruct("EWK WW 2j",    "/local/cms/user/pastika/heavyNuAnalysis_2012/WWqq/WpWpqq_8TeV.root",    "hNuE/"    + cutlevels[cutlevel] + "/" + plot, lumi2012ee, 0.24820,     1.0 / 99985,                                      "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
     bgOther.push_back(HnuPlots::FileStruct("EWK WW 2j",    "/local/cms/user/pastika/heavyNuAnalysis_2012/WWqq/WmWmqq_8TeV.root",    "hNuE/"    + cutlevels[cutlevel] + "/" + plot, lumi2012ee, 0.08888 ,     1.0 / 96392,                                      "", 0.0, 0.0, true, 1, true, 0.0, 0.0, lt, hft, 0, 0, -1, &ll, &ul));
 
-    switch (mode)
-    { // mode == neutrino mass 
-        case 100:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_100_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01693, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-            break;
-        case 200:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_200_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01619, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-            break;
-        case 300:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_300_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01556, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-            break;
-        case 400:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_400_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01476, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-            break;
-        case 500:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_500_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01404, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-            break;
-        case 600:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_600_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01339, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-            break;
-        case 700:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_700_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01260, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-            break;
-        case 800:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_800_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01178, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-            break;
-        case 900:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_900_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.01073, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-            break;
-        case 1000:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1000_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.009804, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-            break;
-        case 1100:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1100_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.008757, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-            break;
-        case 1200:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1200_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.007757, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-            break;
-        case 1300:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1300_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.006618, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-            break;
-        case 1400:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1400_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.005491, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-            break;
-        case 1500:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1500_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.004321, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-            break;
-        case 1600:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1600_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.003294, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-            break;
-        case 1700:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1700_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.002285, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-            break;
-        case 1800:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1800_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.001379, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-            break;
-        case 1900:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_1900_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.000691, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-            break;
-        case 2000:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_2100_to_LNu_Nu_2000_10kevts.root", "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, 0.000224, 1.199 * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-            break;
-        default:
-            wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.1 TeV",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2100_MNu-1050_TuneZ2star_8TeV-pythia6-tauola.root", "hNuE/" + cutlevels[cutlevel] + "/" + plot, lumi2012ee, 0.009319, 1.199 * sigScale, "hNuE/mc_type", 0.0, 0.0, true, 2, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-            break;
+    std::map<int, std::map<int, double> > xsecs;
+    FILE *inCS2 = fopen("../Limits/plot/xsecs.txt", "r");
+    char buff[4096];
+    char *c;
+    while(!feof(inCS2) && (c = fgets(buff, 4096, inCS2)) != NULL)
+    {
+        int energy, tmp_mWR, tmp_mNu;
+        float tmp_cs;
+        for(char* k = strchr(buff, ','); k != 0; k = strchr(buff, ',')) *k = ' ';
+        if(sscanf(buff, "%d %d %d %f\n", &energy, &tmp_mWR, &tmp_mNu, &tmp_cs) == 4 && energy == 8)
+        {
+            if(!(tmp_mWR % 100))
+            {
+                xsecs[tmp_mWR][tmp_mNu] = tmp_cs * 1000000000.0;  //think about the units!
+            }
+        }
     }
+    fclose(inCS2);
+        
+    std::map<int, double> kFactors;
+    kFactors[1900] = 1.230;
+    kFactors[2000] = 1.214;
+    kFactors[2100] = 1.199;
+    kFactors[2200] = 1.194;
+    kFactors[2300] = 1.172;
+        
+    char fileName[512];
+    sprintf(fileName, "/local/cms/user/kalafut/ForBryanDahmes/WR/analyzed_WR_%d_to_LNu_Nu_%d_10kevts.root", mWr, mNu);
+    char llabel[256];
+    sprintf(llabel, "M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = %0.1f TeV, M_{N} = %0.1f TeV", mWr/1000.0, mNu/1000.0);
+    wrSig.push_back(HnuPlots::FileStruct(llabel,  fileName, "hNuGen/" + cutlevels[cutlevel] + "/" + plotSig, lumi2012ee, xsecs[mWr][mNu], kFactors[mWr] * sigScale, "hNuGen/cutProgress", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
 
     // wrSig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", "hNuE/" + cutlevels[cutlevel] + "/" + plot, lumi2012ee, 0.002286, 1.140, "hNuE/mc_type", 0.0, 0.0, true, 2, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
 
@@ -4320,7 +4285,7 @@ void plotTTBarNorm(int cutlevel = 5, bool log = true)
     hps.scaleByShape(20.0, 6000.0, 1);
 }
 
-std::pair<double, double> plotNormSignal(int cutlevel = 5, int wrmass = 2100, int numass = 1050, std::string plotThis = "mWR_mLL_mJJ_mNuR1_mNuR2_ptL1_ptL2_ptJ1_ptJ2;mWR>1.8;mWR<2.2", double scale = 1.0, bool plot = true)
+std::pair<double, double> plotNormSignal(int cutlevel = 5, int wrmass = 2100, int numass = 1000, std::string plotThis = "mWR_mLL_mJJ_mNuR1_mNuR2_ptL1_ptL2_ptJ1_ptJ2;mWR>1.8;mWR<2.2", double scale = 1.0, bool plot = true)
 {
 
     using namespace std;
@@ -4334,7 +4299,7 @@ std::pair<double, double> plotNormSignal(int cutlevel = 5, int wrmass = 2100, in
     //data
     HnuPlots::FileStruct data;
 
-    setBgDataAndSignal(numass, data, bg, lumi, cutlevel, plotThis.c_str());
+    setBgDataAndSignal(wrmass, numass, data, bg, lumi, cutlevel, plotThis.c_str());
     // setBgandData(101, data, bg, lumi, cutlevel, plot, true);
 
     double chi2 = 0.0;
@@ -4360,8 +4325,8 @@ void plotAllChi2(int cutlevel = 5, int wrmass = 2100, std::string plotThis = "mW
 {
     const int NUSPACE = 100;
     
-    TH1* h = new TH1D("chi2","chi2;M_{N} [GeV];Uncorrected #chi^{2}", wrmass/NUSPACE, NUSPACE/2, wrmass + NUSPACE/2);
-    TH1* h2 = new TH1D("chi2_2","chi2;M_{N} [GeV];Uncorrected #chi^{2}", wrmass/NUSPACE, NUSPACE/2, wrmass + NUSPACE/2);
+    TH1* h = new TH1D("chi2","chi2;M_{N} [GeV];Uncorrected #chi^{2}", wrmass/NUSPACE - 1, NUSPACE/2, wrmass - NUSPACE/2);
+    TH1* h2 = new TH1D("chi2_2","chi2;M_{N} [GeV];Uncorrected #chi^{2}", wrmass/NUSPACE - 1, NUSPACE/2, wrmass - NUSPACE/2);
     h2->SetLineColor(kRed);
     h2->SetLineStyle(kDashed);
     
