@@ -1085,7 +1085,7 @@ void HnuPlots::plot1D()
             }
             else 
             {
-                sprintf(temp, "#LTEvents / 200 TeV#GT");
+                sprintf(temp, "#LTEvents / 0.2 TeV#GT");
             }
             yaxislabel = temp;
             isGeV = false;
@@ -1468,7 +1468,7 @@ void HnuPlots::plot1D()
 
         //tfrh->Draw("same hist");
         
-        TLegend *leg2 = new TLegend(0.18, 0.65, 0.45, 0.95);
+        TLegend *leg2 = new TLegend(0.18, 0.65, 0.55, 0.95);
         leg2->SetFillStyle(0); //Color(0);
         leg2->SetBorderSize(0);
         leg2->SetLineWidth(1);
@@ -1534,8 +1534,8 @@ void HnuPlots::plot1D()
                 //tgs[itg]->SetFillStyle(ebStyles[itg % NEBSTYLES]);
                 tgs[itg]->SetMarkerStyle(0);
                 tgs[itg]->Draw("E2 L same");
-                if     (itg == 0) leg2->AddEntry(tgs[itg], "All Syst. Uncert.");
-                else if(itg == 1) leg2->AddEntry(tgs[itg], "Reco/ID Uncert.");
+                if     (itg == 0) leg2->AddEntry(tgs[itg], "All Systematic Uncertainties");
+                else if(itg == 1) leg2->AddEntry(tgs[itg], "No Shape Uncertainty");
                 itg++;
             }
             printf("Chi^2 = %f\n", chi2);
@@ -3468,17 +3468,17 @@ void plot2012(int mode = 0, int cutlevel = 5, std::string plot = "mWR", int rebi
     if(mode <= 1)
     {
         //Nominal signal points -- Sean comment these out before you plot more signal
-        //if(rebin > 0)
-        //{
-        //    vsig.push_back(HnuPlots::FileStruct("#lower[0.31]{#splitline{M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV}{M_{N} = M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}}/2}}",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-        //}
-        //else
-        //{
-        //    vsig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-        //    vsig2.push_back(HnuPlots::FileStruct("#lower[0.31]{#splitline{M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV unbinned}{M_{N} = M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}}/2}}",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul, true));
-        //}
-        //sig.push_back(vsig);
-        //if(rebin <= 0) sig.push_back(vsig2);
+        if(rebin > 0)
+        {
+            vsig.push_back(HnuPlots::FileStruct("#lower[0.31]{#splitline{M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV}{M_{N} = M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}}/2}}",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+        }
+        else
+        {
+            vsig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+            vsig2.push_back(HnuPlots::FileStruct("#lower[0.31]{#splitline{M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV unbinned}{M_{N} = M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}}/2}}",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul, true));
+        }
+        sig.push_back(vsig);
+        if(rebin <= 0) sig.push_back(vsig2);
         
         //sample gen signal point -- Sean add individual signal points here
         //Format  (modify stared fields)     label*           filepath*                                                                                          tupple folder / plotname  lumi  xsec*   kfactor/Nevts*  the rest is a magic incantation that should not be changed
@@ -3487,8 +3487,8 @@ void plot2012(int mode = 0, int cutlevel = 5, std::string plot = "mWR", int rebi
         //vsig.push_back( HnuPlots::FileStruct("M(WR)=2100 M(N)=100"  ,  "/home/ugrad/pastika/cms/HeavyNu/CMSSW_5_3_6_patch1/src/HeavyNu/Tools/analyzed_WR_2100_to_LNu_Nu_1200_10kevts.root", "hNuGen/" + plot, lumi, 16.93, 1.199/10000, "", 0.0, 0.0, true, 1, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
         
         //Then add the individual signal points to the list of signal points
-        vsig.push_back(HnuPlots::FileStruct("#lower[0.31]{#splitline{M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.0 TeV}{M_{N} = 1.67 TeV}}",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MWR-2000_MNu-1666_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.0026, 1.214, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
-        sig.push_back(vsig);
+        //vsig.push_back(HnuPlots::FileStruct("#lower[0.31]{#splitline{M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.0 TeV}{M_{N} = 1.67 TeV}}",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MWR-2000_MNu-1666_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.0026, 1.214, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
+        //sig.push_back(vsig);
         //sig.push_back(vsig2);
     }
     else if(!hft && mode == 2)
