@@ -169,6 +169,10 @@ public:
     void setYRange(double min, double max);
     void setSavePlots(bool sp);
     void autoSetHistogramAxisTitle(int mode = 0);
+	void setPlotString(std::string set);
+	void setIsMuMu(bool muMu);
+	void setIsElEl(bool elEl);
+	void setTheCutString(std::string cuts);
 
 private:
     std::vector<HistStruct> bghists;
@@ -185,6 +189,10 @@ private:
     std::string formlabel;
     bool autosort, islog, saveplots, plotSMoData;
     double sigscale;
+	std::string plotString;
+	std::string theCutString;
+	bool doubleElectron;
+	bool doubleMu;
 
     TH1* project(TH2* h2d, double cl, double ch, bool porjx = true);
     int projcount;
@@ -608,6 +616,10 @@ TH1* HnuPlots::histFromTuple(std::string histValues, double nb, std::vector<std:
             else if(histV.compare("idL1") == 0 || histV.compare("idL2") == 0 || histV.compare("bJ1") == 0 || histV.compare("bJ2") == 0) vlim.push_back(Limits(-0.5, 1.5, 2));
             else if(histV.compare("jmult") == 0) vlim.push_back(Limits(-0.5, 9.5, 10));
             else if(histV.compare("bmult") == 0) vlim.push_back(Limits(-0.5, 9.5, 10));
+
+			//else if(histV.compare("njets") == 0) vlim.push_back(Limits(-0.5, 9.5, 10));
+            //else if(histV.compare("numBjets") == 0) vlim.push_back(Limits(-0.5, 9.5, 10));
+
             else if(histV.compare("mLQmin") == 0 || histV.compare("mLQavg") == 0 || histV.compare("mLQmax") == 0) vlim.push_back(Limits(0, 1500, 150));
             else if(histV.compare("mLQdiff") == 0) vlim.push_back(Limits(0, 1000, 200));
             //else if(histV.compare("mLQavg") == 0) vlim.push_back(Limits(0, 1500, 150));
@@ -716,6 +728,22 @@ TH1* HnuPlots::histFromTuple(std::string histValues, double nb, std::vector<std:
     }
     
     return hist;
+}
+
+void HnuPlots::setPlotString(std::string set){
+	plotString = set;
+}
+
+void HnuPlots::setIsMuMu(bool muMu){
+	doubleMu = muMu;
+}
+
+void HnuPlots::setIsElEl(bool elEl){
+	doubleElectron = elEl;
+}
+
+void HnuPlots::setTheCutString(std::string cuts){
+	theCutString = cuts;
 }
 
 double HnuPlots::getTupleVar(std::string var, const HeavyNuTree::HNuSlopeFitInfo& tpls)
@@ -1127,6 +1155,12 @@ void HnuPlots::plot1D()
     datahist.hist->SetMarkerStyle(20);
     datahist.hist->SetLineWidth(2.0);
 
+	/*
+	for(int j=0; j<= datahist.hist->GetNbinsX() ; j++){
+		std::cout<<"datahist bin # "<< j <<" contains "<< datahist.hist->GetBinContent(j) <<" entries"<<std::endl;
+	}
+	*/
+
     //TLegend *leg = new TLegend(0.52, 0.67, 0.94, 0.91);
     TLegend *leg = new TLegend(0.45, 0.61, 0.89, 0.91);
     leg->SetFillStyle(0); //Color(0);
@@ -1134,6 +1168,21 @@ void HnuPlots::plot1D()
     leg->SetLineWidth(1);
     leg->SetNColumns(1);
     leg->SetTextFont(42);
+
+	TLatex * limitedMWr;
+	double yPosition = 8;
+	double xPosition = 2.3;
+	if(doubleElectron){
+		//set limitedMWr to show 1.8 < M_eejj < 2.2 TeV
+		limitedMWr = new TLatex(xPosition, yPosition,"1.8 < M_{eejj} < 2.2 TeV");
+		limitedMWr->SetTextFont(42);
+	}
+	if(doubleMu){
+		//set limitedMWr to show 1.8 < M_uujj < 2.2 TeV
+		limitedMWr = new TLatex(xPosition, yPosition,"1.8 < M_{uujj} < 2.2 TeV");
+		limitedMWr->SetTextFont(42);
+	}
+
 
     float dataintegral = 0.0;
     if(rebin >= 0) dataintegral = datahist.hist->Integral(0, datahist.hist->GetNbinsX() + 1);
@@ -1283,7 +1332,13 @@ void HnuPlots::plot1D()
     datahist.hist->Draw("same pe");
     fixOverlay();
     leg->Draw();
-    
+	if(theCutString.compare("_cut5_mWR_gt_1.8_mWR_lt_2.2") == 0){
+		//draw limitedMWr
+		//NOTE this will have to be changed if I make plots that do not show jet and b-jet multiplicity
+		limitedMWr->Draw();
+	}
+
+
     TLatex mark;
     mark.SetTextSize(0.04 * 1.1 * 8 / 6.5 * fontScale);
     mark.SetTextFont(42);
@@ -1294,13 +1349,14 @@ void HnuPlots::plot1D()
     mark.SetTextAlign(31);
     mark.DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.017, lumistamp);
     //mark.SetTextSize((0.04 * 7 / 6.5 * fontScale)*1.25);
-    bool isCMS = false;
+    bool isCMS = true;
     if(isCMS)
     {
         mark.SetTextAlign(13);
         mark.SetTextSize(0.04 * 1.1 * 8 / 6.5 * 1.25 * fontScale);
         mark.SetTextFont(61);
-        mark.DrawLatex(gPad->GetLeftMargin() + 0.027, 1 - (gPad->GetTopMargin() + 0.027), "CMS"); // #scale[0.8]{#it{Preliminary}}");
+		//used to be 0.027, changed to 0.08 due to bmult bin 1
+        mark.DrawLatex(gPad->GetLeftMargin() + 0.08, 1 - (gPad->GetTopMargin() + 0.027), "CMS"); // #scale[0.8]{#it{Preliminary}}");
     }
     else
     {
@@ -2968,17 +3024,25 @@ const static double k_mm_ddtop = /*0.620166*/0.631595,                          
 //electron k factors
 const static double k_ee_ddtop = /*0.518549*/0.524452 * lumi2012ee / lumi2012mm, k_ee_Zscale = /*0.963943*//*0.939217 0.973471 1.05259*/ 1.00043*0.99879, k_ee_NNLOZ = 1.1893;
 
-//data files
-const std::string data_ee("/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData_2/Elec-Run2012ABCD-22Jan2013-v1.root");
-const std::string data_mm("/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData_2/Mu-Run2012ABCD-22Jan2013-v1.root");
-const std::string data_em("/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData_2/Mu-Run2012ABCD-22Jan2013-v1.root");
+//2012 real data files
+//const std::string data_ee("/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData_2/Elec-Run2012ABCD-22Jan2013-v1.root");
+
+//use this file to remake jmult and bmult distributions
+const std::string data_ee("/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData_4/Elec-Run2012ABCD-22Jan2013-v1.root");
+
+//const std::string data_mm("/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData_2/Mu-Run2012ABCD-22Jan2013-v1.root");
+//const std::string data_em("/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData_2/Mu-Run2012ABCD-22Jan2013-v1.root");
+const std::string data_mm("/local/cms/user/kalafut/WR_analysis/muon_all2012_analysis.root");
+const std::string data_em("/local/cms/user/kalafut/WR_analysis/muon_all2012_analysis.root");
+
+
 
 //const std::string data_ee("/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_10/run2012ABCD-electron.root");
 //const std::string data_mm("/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_10/run2012ABCD-muon.root");
 //const std::string data_em("/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_10/run2012ABCD-muon.root");
 
 
-//mc file
+//2012 bkgnd mc files
 const std::string mc_tt(   "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_TTJets_FullLeptMGDecays_8TeV-madgraph.root");
 const std::string mc_ZJ(   "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_DYJetsToLL_M-50_TuneZ2Star_8TeV-madgraph-tarball_START53_V7A_skim.root");
 const std::string mc_ZZ(   "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_ZZ_TuneZ2star_8TeV_pythia6_tauola_START53_V7A-v1.root");
@@ -3477,8 +3541,9 @@ void plot2012(int mode = 0, int cutlevel = 5, std::string plot = "mWR", int rebi
             vsig.push_back(HnuPlots::FileStruct("M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul));
             vsig2.push_back(HnuPlots::FileStruct("#lower[0.31]{#splitline{M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}} = 2.5 TeV unbinned}{M_{N} = M_{#lower[-0.1]{W_{#lower[-0.2]{R}}}}/2}}",  "/local/cms/user/pastika/heavyNuAnalysis_2012/Fall12_rerecoData/heavynu_2012Bg_WRToNuLeptonToLLJJ_MW-2500_MNu-1250_TuneZ2star_8TeV-pythia6-tauola.root", histograms, lumi, 0.002286, 1.140, normhist, 0.0, 0.0, true, signormbin, true, 0.0, 0.0, true, hft, 0, 0, -1, &ll, &ul, true));
         }
-        sig.push_back(vsig);
-        if(rebin <= 0) sig.push_back(vsig2);
+        //when making n(jet) and n(bjet) plots don't show a curve from theoretical WR signal simulation data
+		//sig.push_back(vsig);
+        //if(rebin <= 0) sig.push_back(vsig2);
         
         //sample gen signal point -- Sean add individual signal points here
         //Format  (modify stared fields)     label*           filepath*                                                                                          tupple folder / plotname  lumi  xsec*   kfactor/Nevts*  the rest is a magic incantation that should not be changed
@@ -3511,6 +3576,7 @@ void plot2012(int mode = 0, int cutlevel = 5, std::string plot = "mWR", int rebi
     HnuPlots hps(data, bg, sig, lumi);
     std::string clstring;
     makeCutString(cutlevel, plot, clstring);
+	hps.setTheCutString(clstring);
     switch(mode)
     {
         case 7:
@@ -3520,12 +3586,34 @@ void plot2012(int mode = 0, int cutlevel = 5, std::string plot = "mWR", int rebi
             if(rebin > 0) hps.setFormLabel("hNu_mm_2012" + clstring);
             else          hps.setFormLabel("hNu_mm_ls_2012" + clstring);
             hps.setSavePlots(true);
-            if(!plot.compare("mWR") || !plot.compare("mWR;"))
+    		hps.setPlotString(plot);
+			hps.setIsMuMu(true);
+			hps.setIsElEl(false);
+			if(!plot.compare("mWR") || !plot.compare("mWR;"))
             {
                 if(cutlevel == 5) hps.setYRange(0.06, 3000);
                 hps.loadSystFile("/home/ugrad/pastika/cms/HeavyNu/CMSSW_6_1_1/src/HeavyNu/Limits/ctool/systematicsdb_mu_2012.csv", "/home/ugrad/pastika/cms/HeavyNu/CMSSW_6_1_1/src/HeavyNu/Limits/ctool/ratesdb.csv", (mode == 7));
                 hps.mcBgShape();
             }
+			//std::cout<<"cut string contains: "<< clstring << std::endl;
+			//std::cout<<"about to compare cut string to: _cut5_mWR_gt_1.8_mWR_lt_2.2_bmult_linear"<< std::endl;
+			//std::cout<<"plot contains: "<< plot <<std::endl;
+			//std::cout<<"plot compared to bmult;mWR>1.8;mWR<2.2; yields "<< plot.compare("bmult;mWR>1.8;mWR<2.2;") <<std::endl;
+
+			if(clstring.compare("_cut5_mWR_gt_1.8_mWR_lt_2.2")==0 && plot.compare("bmult;mWR>1.8;mWR<2.2;")==0 ){
+				//need more room for "CMS" in upper left corner and 1.8 < M_{uujj} < 2.2 TeV TLatex box 
+				//std::cout<<"in b jet multiplicity if statement for mu mu data"<<std::endl;
+				hps.setYRange(0., 15.);
+				hps.setXAxisTitle("b jet multiplicity");
+			}
+
+			if(clstring.compare("_cut5_mWR_gt_1.8_mWR_lt_2.2")==0 && plot.compare("jmult;mWR>1.8;mWR<2.2;")==0 ){
+				//need more room for legend and 1.8 < M_{uujj} < 2.2 TeV TLatex box
+				//std::cout<<"in jet multiplicity if statement for mu mu data"<<std::endl;
+				hps.setYRange(0., 15.);
+				hps.setXAxisTitle("jet multiplicity");
+			}
+
             break;
         case 8:
             rebin = -1;
@@ -3534,12 +3622,27 @@ void plot2012(int mode = 0, int cutlevel = 5, std::string plot = "mWR", int rebi
             if(rebin > 0) hps.setFormLabel("hNu_ee_2012" + clstring);
             else          hps.setFormLabel("hNu_ee_ls_2012" + clstring);
             hps.setSavePlots(true);
+			hps.setPlotString(plot);
+			hps.setIsMuMu(false);
+			hps.setIsElEl(true);
             if(!plot.compare("mWR") || !plot.compare("mWR;"))
             {
                 if(cutlevel == 5) hps.setYRange(0.06, 3000);
                 hps.loadSystFile("/home/ugrad/pastika/cms/HeavyNu/CMSSW_6_1_1/src/HeavyNu/Limits/ctool/systematicsdb_elec_2012.csv", "/home/ugrad/pastika/cms/HeavyNu/CMSSW_6_1_1/src/HeavyNu/Limits/ctool/ratesdb_elec.csv", (mode == 8));
                 hps.mcBgShape();
             }
+			//see what contents are in the 2012 real data histogram
+			/*
+			for(int j=0; j<= hps.datahist.hist->GetNbinsX() ; j++){
+				std::cout<<"datahist bin # "<< j <<" contains "<< hps.datahist.hist->GetBinContent(j) <<" entries"<<std::endl;
+			}
+			*/
+			if(clstring.compare("_cut5_mWR_gt_1.8_mWR_lt_2.2")==0 ){
+				//need more room for "CMS" in upper left corner and/or legend
+				//and 1.8 < M_{eejj} < 2.2 TeV TLatex box
+				hps.setYRange(0., 15.);
+			}
+
             break;
         case 2:
             hps.setFormLabel("hNu_em_2012" + clstring);
@@ -3576,7 +3679,7 @@ void plot2012(int mode = 0, int cutlevel = 5, std::string plot = "mWR", int rebi
     hps.autoSetHistogramAxisTitle(mode);
     hps.setRebin(rebin);
     hps.setLog(log);
-    hps.setCompPlot(true);
+    hps.setCompPlot(false);
     hps.setXRange(xmin, xmax);
     hps.plot();
     hps.integrals(0.0, 60000);
@@ -5179,6 +5282,10 @@ void plotall()
 
 int main()
 {
-    plot2012(0, 5);
-    //plotall();
+	//using rebin = -1, and modifying code in plot2012(), allows the mWR = 2.5 TeV, mNu = mWR/2 theoretical signal data to be plotted with
+	//real data and MC from 2012 (8 TeV)
+	plot2012(0, 5, "mWR;", -1, true, 0, 4);
+    plot2012(1, 5, "mWR;", -1, true, 0, 4);
+	
+	//plotall();
 }
