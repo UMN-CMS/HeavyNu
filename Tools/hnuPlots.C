@@ -1349,7 +1349,7 @@ void HnuPlots::plot1D()
     mark.SetTextAlign(31);
     mark.DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.017, lumistamp);
     //mark.SetTextSize((0.04 * 7 / 6.5 * fontScale)*1.25);
-    bool isCMS = true;
+    bool isCMS = false;
     if(isCMS)
     {
         mark.SetTextAlign(13);
